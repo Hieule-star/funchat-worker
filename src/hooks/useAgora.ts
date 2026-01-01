@@ -118,20 +118,33 @@ export function useAgora({ client }: UseAgoraOptions): UseAgoraReturn {
         const channel = channelName || "funprofile-test";
         console.log("[Agora] Joining channel:", channel);
 
-        // Fetch fresh token from Vercel Token Server
-        const VERCEL_TOKEN_SERVER = "https://mkdir-agora-token-server.vercel.app/api/agora-token";
-        console.log("[Agora] Fetching token from Vercel Token Server...");
+        // Fetch fresh token from Cloudflare Worker
+        const TOKEN_SERVER = import.meta.env.VITE_AGORA_TOKEN_URL;
+        if (!TOKEN_SERVER) {
+          throw new Error('VITE_AGORA_TOKEN_URL is not configured');
+        }
         
-        const tokenResponse = await fetch(VERCEL_TOKEN_SERVER, {
+        console.log("[Agora] Fetching token from Cloudflare Worker...");
+        
+        // Get Supabase session for authentication
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          throw new Error('User not authenticated');
+        }
+        
+        const tokenResponse = await fetch(TOKEN_SERVER, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`
+          },
           body: JSON.stringify({ channelName: channel, uid: uid || 0 }),
         });
 
         if (!tokenResponse.ok) {
-          const errorText = await tokenResponse.text();
-          console.error("[Agora] Token fetch error:", errorText);
-          throw new Error(`Không thể lấy token: ${errorText}`);
+          const errorData = await tokenResponse.json().catch(() => ({}));
+          console.error("[Agora] Token fetch error:", errorData);
+          throw new Error(`Token fetch failed (${tokenResponse.status}): ${errorData.error || 'Unknown error'}`);
         }
 
         const data = await tokenResponse.json();
@@ -145,7 +158,7 @@ export function useAgora({ client }: UseAgoraOptions): UseAgoraReturn {
 
         // ===== DEBUG LOGGING =====
         console.log("[Agora] ===== DEBUG INFO =====");
-        console.log("[Agora] Token fetched from Vercel Token Server");
+        console.log("[Agora] Token fetched from Cloudflare Worker");
         console.log("[Agora] AGORA APP_ID =", appId);
         console.log("[Agora] AGORA TOKEN =", agoraToken?.substring(0, 30) + "...");
         console.log("[Agora] AGORA CHANNEL =", channel);

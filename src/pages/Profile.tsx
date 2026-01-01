@@ -5,46 +5,21 @@ import {
   MessageSquare, 
   Heart, 
   Users, 
-  Loader2, 
-  Coins,
+  Loader2,
   LayoutGrid,
   FileText,
-  Wallet,
-  Image,
   Award,
   Activity
 } from "lucide-react";
-import Post from "@/components/Post";
 import EditProfileModal from "@/components/EditProfileModal";
-import DailyCheckIn from "@/components/DailyCheckIn";
-import { ClaimCamlyModal } from "@/components/wallet/ClaimCamlyModal";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ReputationBar } from "@/components/profile/ReputationBar";
 import { BadgesSection } from "@/components/profile/BadgesSection";
-import { Web3Section } from "@/components/profile/Web3Section";
-import { NFTsSection } from "@/components/profile/NFTsSection";
+import { SocialLinks } from "@/components/profile/SocialLinks";
 import { useAuth } from "@/contexts/AuthContext";
-import { useWallet } from "@/contexts/WalletContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-
-interface MediaItem {
-  type: "image" | "video";
-  url: string;
-}
-
-interface PostData {
-  id: string;
-  content: string;
-  created_at: string;
-  user_id: string;
-  media: MediaItem[] | null;
-  profiles: {
-    username: string;
-    avatar_url: string;
-  };
-}
 
 interface ProfileData {
   id: string;
@@ -64,10 +39,8 @@ interface ProfileData {
 }
 
 interface StatsData {
-  postsCount: number;
   friendsCount: number;
-  likesCount: number;
-  camlyBalance: number;
+  messagesCount: number;
 }
 
 interface ActivityItem {
@@ -80,21 +53,16 @@ interface ActivityItem {
 
 export default function Profile() {
   const { user, profile: authProfile } = useAuth();
-  const { address } = useWallet();
   const { toast } = useToast();
-  const [posts, setPosts] = useState<PostData[]>([]);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [stats, setStats] = useState<StatsData>({
-    postsCount: 0,
     friendsCount: 0,
-    likesCount: 0,
-    camlyBalance: 0,
+    messagesCount: 0,
   });
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [achievements, setAchievements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [claimModalOpen, setClaimModalOpen] = useState(false);
 
   const fetchUserData = async () => {
     if (!user) return;
@@ -112,29 +80,6 @@ export default function Profile() {
       if (profileError) throw profileError;
       setProfileData(fullProfile as ProfileData);
 
-      // Fetch user posts
-      const { data: postsData, error: postsError } = await supabase
-        .from("posts")
-        .select(`
-          id,
-          content,
-          created_at,
-          user_id,
-          media,
-          profiles (
-            username,
-            avatar_url
-          )
-        `)
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (postsError) throw postsError;
-      setPosts((postsData as any) || []);
-
-      // Calculate stats
-      const postsCount = postsData?.length || 0;
-
       // Count friends (accepted friendships)
       const { count: friendsCount } = await supabase
         .from("friendships")
@@ -142,40 +87,16 @@ export default function Profile() {
         .eq("status", "accepted")
         .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`);
 
-      // Count likes on user's posts
-      const postIds = postsData?.map(p => p.id) || [];
-      let likesCount = 0;
-      if (postIds.length > 0) {
-        const { count } = await supabase
-          .from("post_likes")
-          .select("*", { count: "exact", head: true })
-          .in("post_id", postIds);
-        likesCount = count || 0;
-      }
-
-      // Fetch CAMLY balance
-      const { data: rewardsData } = await supabase
-        .from("user_rewards")
-        .select("camly_balance")
-        .eq("user_id", user.id)
-        .single();
+      // Count messages sent
+      const { count: messagesCount } = await supabase
+        .from("messages")
+        .select("*", { count: "exact", head: true })
+        .eq("sender_id", user.id);
 
       setStats({
-        postsCount,
         friendsCount: friendsCount || 0,
-        likesCount,
-        camlyBalance: rewardsData?.camly_balance || 0,
+        messagesCount: messagesCount || 0,
       });
-
-      // Fetch recent activities
-      const { data: activityData } = await supabase
-        .from("reward_transactions")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(20);
-
-      setActivities((activityData as ActivityItem[]) || []);
 
       // Fetch achievements
       const { data: achievementsData } = await supabase
@@ -204,12 +125,9 @@ export default function Profile() {
   const getActivityIcon = (type: string) => {
     const icons: Record<string, any> = {
       registration: Users,
-      post: FileText,
-      comment: MessageSquare,
-      like: Heart,
+      message: MessageSquare,
       friend: Users,
-      game: Award,
-      daily_checkin: Activity,
+      call: Activity,
     };
     return icons[type] || Activity;
   };
@@ -240,7 +158,7 @@ export default function Profile() {
           <ProfileHeader
             profile={profileData}
             isOwnProfile={true}
-            postsCount={stats.postsCount}
+            postsCount={0}
             friendsCount={stats.friendsCount}
             onEditClick={() => setEditModalOpen(true)}
             onCoverEditClick={() => setEditModalOpen(true)}
@@ -254,12 +172,11 @@ export default function Profile() {
           </Card>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             {[
-              { icon: TrendingUp, label: "Bài viết", value: stats.postsCount, color: "text-primary" },
               { icon: Users, label: "Bạn bè", value: stats.friendsCount, color: "text-blue-500" },
-              { icon: Heart, label: "Lượt thích", value: stats.likesCount, color: "text-red-500" },
-              { icon: Coins, label: "CAMLY Coin", value: stats.camlyBalance.toLocaleString(), color: "text-yellow-500" },
+              { icon: MessageSquare, label: "Tin nhắn", value: stats.messagesCount, color: "text-primary" },
+              { icon: Heart, label: "Cuộc gọi", value: 0, color: "text-red-500" },
             ].map((stat, index) => {
               const Icon = stat.icon;
               return (
@@ -274,31 +191,16 @@ export default function Profile() {
             })}
           </div>
 
-          {/* Daily Check-In */}
-          <DailyCheckIn />
-
           {/* Content Tabs */}
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="overview" className="gap-1 text-xs sm:text-sm">
                 <LayoutGrid className="h-4 w-4" />
                 <span className="hidden sm:inline">Tổng quan</span>
               </TabsTrigger>
-              <TabsTrigger value="posts" className="gap-1 text-xs sm:text-sm">
-                <FileText className="h-4 w-4" />
-                <span className="hidden sm:inline">Bài viết</span>
-              </TabsTrigger>
               <TabsTrigger value="friends" className="gap-1 text-xs sm:text-sm">
                 <Users className="h-4 w-4" />
                 <span className="hidden sm:inline">Bạn bè</span>
-              </TabsTrigger>
-              <TabsTrigger value="wallet" className="gap-1 text-xs sm:text-sm">
-                <Wallet className="h-4 w-4" />
-                <span className="hidden sm:inline">Web3</span>
-              </TabsTrigger>
-              <TabsTrigger value="nfts" className="gap-1 text-xs sm:text-sm">
-                <Image className="h-4 w-4" />
-                <span className="hidden sm:inline">NFTs</span>
               </TabsTrigger>
               <TabsTrigger value="badges" className="gap-1 text-xs sm:text-sm">
                 <Award className="h-4 w-4" />
@@ -309,133 +211,50 @@ export default function Profile() {
             {/* Overview Tab */}
             <TabsContent value="overview" className="mt-6 space-y-6">
               <div className="grid gap-6 lg:grid-cols-2">
-                {/* Recent Activity */}
+                {/* Social Links */}
                 <Card className="border-primary/20">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Activity className="h-5 w-5 text-primary" />
-                      Hoạt động gần đây
+                      Liên kết xã hội
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {activities.length > 0 ? (
-                      <div className="space-y-3">
-                        {activities.slice(0, 5).map((activity) => {
-                          const Icon = getActivityIcon(activity.reward_type);
-                          return (
-                            <div key={activity.id} className="flex items-center gap-3">
-                              <div className="p-2 rounded-full bg-primary/10">
-                                <Icon className="h-4 w-4 text-primary" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm truncate">{activity.description}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {new Date(activity.created_at).toLocaleDateString("vi-VN")}
-                                </p>
-                              </div>
-                              <p className="text-sm font-medium text-primary">
-                                +{activity.amount.toLocaleString()}
-                              </p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground text-center py-4">Chưa có hoạt động</p>
-                    )}
+                    <SocialLinks
+                      facebook={profileData.social_facebook}
+                      instagram={profileData.social_instagram}
+                      twitter={profileData.social_twitter}
+                      tiktok={profileData.social_tiktok}
+                      website={profileData.social_website}
+                    />
                   </CardContent>
                 </Card>
 
-                {/* Recent Posts */}
+                {/* About */}
                 <Card className="border-primary/20">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <FileText className="h-5 w-5 text-primary" />
-                      Bài viết mới nhất
+                      Giới thiệu
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {posts.length > 0 ? (
-                      <div className="space-y-3">
-                        {posts.slice(0, 3).map((post) => (
-                          <div key={post.id} className="p-3 rounded-lg bg-muted/50">
-                            <p className="text-sm line-clamp-2">{post.content || "Đã đăng ảnh/video"}</p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {new Date(post.created_at).toLocaleDateString("vi-VN")}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground text-center py-4">Chưa có bài viết</p>
+                    <p className="text-muted-foreground">
+                      {profileData.bio || "Chưa có thông tin giới thiệu"}
+                    </p>
+                    {profileData.job_title && (
+                      <p className="mt-2 text-sm">
+                        <span className="font-medium">Công việc:</span> {profileData.job_title}
+                      </p>
+                    )}
+                    {profileData.location && (
+                      <p className="text-sm">
+                        <span className="font-medium">Địa điểm:</span> {profileData.location}
+                      </p>
                     )}
                   </CardContent>
                 </Card>
               </div>
-            </TabsContent>
-
-            {/* Posts Tab */}
-            <TabsContent value="posts" className="mt-6 space-y-4">
-              {posts.length > 0 ? (
-                <>
-                  {/* Media Grid */}
-                  {posts.filter(p => p.media && p.media.length > 0).length > 0 && (
-                    <Card className="border-primary/20">
-                      <CardHeader>
-                        <CardTitle>Ảnh & Video</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
-                          {posts
-                            .filter(p => p.media && p.media.length > 0)
-                            .flatMap(post => post.media || [])
-                            .slice(0, 12)
-                            .map((mediaItem, index) => (
-                              <div key={index} className="relative overflow-hidden rounded-lg bg-muted aspect-square">
-                                {mediaItem.type === "video" ? (
-                                  <video
-                                    src={mediaItem.url}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <img
-                                    src={mediaItem.url}
-                                    alt={`Media ${index + 1}`}
-                                    className="w-full h-full object-cover hover:scale-105 transition-transform"
-                                  />
-                                )}
-                              </div>
-                            ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* Posts List */}
-                  {posts.map((post) => (
-                    <Post
-                      key={post.id}
-                      postId={post.id}
-                      userId={post.user_id}
-                      author={post.profiles.username || "Người dùng"}
-                      avatarUrl={post.profiles.avatar_url}
-                      content={post.content || ""}
-                      timestamp={new Date(post.created_at)}
-                      likes={0}
-                      comments={0}
-                      shares={0}
-                      media={post.media || undefined}
-                    />
-                  ))}
-                </>
-              ) : (
-                <Card>
-                  <CardContent className="py-12 text-center">
-                    <FileText className="h-12 w-12 mx-auto mb-2 text-muted-foreground opacity-50" />
-                    <p className="text-muted-foreground">Chưa có bài viết nào</p>
-                  </CardContent>
-                </Card>
-              )}
             </TabsContent>
 
             {/* Friends Tab */}
@@ -449,19 +268,6 @@ export default function Profile() {
                   </a>
                 </CardContent>
               </Card>
-            </TabsContent>
-
-            {/* Web3 Wallet Tab */}
-            <TabsContent value="wallet" className="mt-6">
-              <Web3Section
-                camlyBalance={stats.camlyBalance}
-                onClaimClick={() => setClaimModalOpen(true)}
-              />
-            </TabsContent>
-
-            {/* NFTs Tab */}
-            <TabsContent value="nfts" className="mt-6">
-              <NFTsSection nfts={[]} walletAddress={address} />
             </TabsContent>
 
             {/* Badges Tab */}
@@ -487,12 +293,6 @@ export default function Profile() {
         currentSocialTwitter={profileData.social_twitter || ""}
         currentSocialWebsite={profileData.social_website || ""}
         onProfileUpdate={fetchUserData}
-      />
-      
-      <ClaimCamlyModal
-        open={claimModalOpen}
-        onOpenChange={setClaimModalOpen}
-        camlyBalance={stats.camlyBalance}
       />
     </div>
   );

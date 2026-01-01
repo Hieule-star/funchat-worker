@@ -5,6 +5,7 @@ import AgoraRTC, {
   IMicrophoneAudioTrack,
   IAgoraRTCRemoteUser
 } from "agora-rtc-sdk-ng";
+import { supabase } from "@/integrations/supabase/client";
 
 interface UseAgoraCallReturn {
   localVideoRef: React.RefObject<HTMLDivElement>;
@@ -31,20 +32,33 @@ export function useAgoraCall(): UseAgoraCallReturn {
     try {
       console.log('[Agora] Joining channel:', channelName, 'mode:', mode);
       
-      // 1. Get token from Vercel Token Server
-      const VERCEL_TOKEN_SERVER = "https://mkdir-agora-token-server.vercel.app/api/agora-token";
-      console.log('[Agora] Fetching token from Vercel Token Server...');
+      // 1. Get token from Cloudflare Worker
+      const TOKEN_SERVER = import.meta.env.VITE_AGORA_TOKEN_URL;
+      if (!TOKEN_SERVER) {
+        throw new Error('VITE_AGORA_TOKEN_URL is not configured');
+      }
+      
+      console.log('[Agora] Fetching token from Cloudflare Worker...');
 
-      const tokenResponse = await fetch(VERCEL_TOKEN_SERVER, {
+      // Get Supabase session for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('User not authenticated');
+      }
+
+      const tokenResponse = await fetch(TOKEN_SERVER, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
+        },
         body: JSON.stringify({ channelName, uid: 0 }),
       });
 
       if (!tokenResponse.ok) {
-        const errorText = await tokenResponse.text();
-        console.error('[Agora] Token fetch error:', errorText);
-        throw new Error(`Không thể lấy token: ${errorText}`);
+        const errorData = await tokenResponse.json().catch(() => ({}));
+        console.error('[Agora] Token fetch error:', errorData);
+        throw new Error(`Token fetch failed (${tokenResponse.status}): ${errorData.error || 'Unknown error'}`);
       }
 
       const data = await tokenResponse.json();

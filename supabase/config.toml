@@ -3,22 +3,10 @@ project_id = "krajdsugcvwytpsqnbzs"
 [functions.get-upload-url]
 verify_jwt = true
 
-[functions.detect-token-holdings]
-verify_jwt = false
-
-[functions.paymaster]
-verify_jwt = false
-
 [functions.realtime-video]
 verify_jwt = false
 
 [functions.agora-token]
-verify_jwt = false
-
-[functions.claim-camly]
-verify_jwt = true
-
-[functions.treasury-monitor]
 verify_jwt = false
 
 [functions.admin-cloudflare-stream-config]

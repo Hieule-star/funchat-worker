@@ -6,8 +6,5 @@ verify_jwt = true
 [functions.realtime-video]
 verify_jwt = false
 
-[functions.agora-token]
-verify_jwt = false
-
 [functions.admin-cloudflare-stream-config]
 verify_jwt = true

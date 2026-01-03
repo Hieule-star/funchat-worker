@@ -283,7 +283,17 @@ export default function ChatSidebar({
               key={conversation.id}
               conversation={conversation}
               isSelected={selectedConversation?.id === conversation.id}
-              onClick={() => onSelectConversation(conversation)}
+              onClick={() => {
+                onSelectConversation(conversation);
+                // Optimistic update: reset unread count immediately
+                setConversations(prev => 
+                  prev.map(c => 
+                    c.id === conversation.id 
+                      ? { ...c, unreadCount: 0 } 
+                      : c
+                  )
+                );
+              }}
               onlineUsers={onlineUsers}
               typingUsers={getTypingUsers(conversation.id)}
             />

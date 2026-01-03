@@ -8,6 +8,7 @@ import ChatInput from "@/components/chat/ChatInput";
 import AgoraVideoCallModal from "@/components/chat/AgoraVideoCallModal";
 import DeviceSelectionModal from "@/components/chat/DeviceSelectionModal";
 import OutgoingCallModal from "@/components/chat/OutgoingCallModal";
+import { ForwardMessageModal } from "@/components/chat/ForwardMessageModal";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -20,9 +21,12 @@ export default function Chat() {
   const { toast } = useToast();
   const { onlineUsers } = usePresence(user?.id);
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
+  const [conversations, setConversations] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [replyTo, setReplyTo] = useState<any>(null);
+  const [forwardMessage, setForwardMessage] = useState<any>(null);
+  const [forwardModalOpen, setForwardModalOpen] = useState(false);
   const [videoCallOpen, setVideoCallOpen] = useState(false);
   const [deviceSelectionOpen, setDeviceSelectionOpen] = useState(false);
   const [callMode, setCallMode] = useState<'video' | 'audio'>('video');
@@ -228,6 +232,37 @@ export default function Chat() {
 
   const handleCancelReply = () => {
     setReplyTo(null);
+  };
+
+  const handleForwardMessage = (message: any) => {
+    setForwardMessage(message);
+    setForwardModalOpen(true);
+  };
+
+  const handleForward = async (targetConversationId: string, message: any) => {
+    if (!user) return;
+
+    const { error } = await supabase.from("messages").insert({
+      conversation_id: targetConversationId,
+      sender_id: user.id,
+      content: message.content,
+      media_url: message.media_url,
+      media_type: message.media_type,
+    });
+
+    if (error) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể chuyển tiếp tin nhắn. Vui lòng thử lại.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    toast({
+      title: "Đã chuyển tiếp",
+      description: "Tin nhắn đã được chuyển tiếp thành công"
+    });
   };
 
   // Handle call acceptance - open video modal for CALLER
@@ -470,6 +505,7 @@ export default function Chat() {
       <ChatSidebar
         selectedConversation={selectedConversation}
         onSelectConversation={setSelectedConversation}
+        onConversationsChange={setConversations}
       />
 
       <div className="flex-1 flex flex-col">
@@ -494,6 +530,7 @@ export default function Chat() {
                 typingUsers={typingUsers}
                 onDeleteMessage={handleDeleteMessage}
                 onReplyMessage={handleReplyMessage}
+                onForwardMessage={handleForwardMessage}
               />
             )}
 
@@ -602,6 +639,26 @@ export default function Chat() {
           selectedAudioDeviceId={selectedDevices.audioDeviceId}
         />
       )}
+
+      <ForwardMessageModal
+        isOpen={forwardModalOpen}
+        onClose={() => {
+          setForwardModalOpen(false);
+          setForwardMessage(null);
+        }}
+        message={forwardMessage}
+        conversations={conversations
+          .filter(c => c.id !== selectedConversation?.id)
+          .map(c => ({
+            id: c.id,
+            otherUser: {
+              id: c.participants[0]?.profiles?.id || "",
+              username: c.participants[0]?.profiles?.username || "Unknown",
+              avatar_url: c.participants[0]?.profiles?.avatar_url
+            }
+          }))}
+        onForward={handleForward}
+      />
     </div>
   );
 }

@@ -17,6 +17,7 @@ interface MessageListProps {
   typingUsers?: TypingUser[];
   onDeleteMessage?: (messageId: string) => Promise<void>;
   onReplyMessage?: (message: any) => void;
+  onForwardMessage?: (message: any) => void;
 }
 
 export default function MessageList({ 
@@ -24,7 +25,8 @@ export default function MessageList({
   currentUserId, 
   typingUsers = [],
   onDeleteMessage,
-  onReplyMessage
+  onReplyMessage,
+  onForwardMessage
 }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
@@ -113,6 +115,7 @@ export default function MessageList({
                   isDeleting={deletingMessageId === message.id}
                   onReply={onReplyMessage}
                   replyToMessage={replyToMessage}
+                  onForward={onForwardMessage}
                 />
               </div>
             );

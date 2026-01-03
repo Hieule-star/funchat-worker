@@ -2,7 +2,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { FileText, Download, FileArchive, FileSpreadsheet, FileCode, File, CheckCheck, Trash2, MoreVertical, Reply, Forward, Smile, Pin, CornerUpRight } from "lucide-react";
+import { FileText, Download, FileArchive, FileSpreadsheet, FileCode, File, CheckCheck, Trash2, MoreVertical, Reply, Forward, Smile, Pin, CornerUpRight, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,6 +10,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import ReactionPicker from "./ReactionPicker";
 import MessageReactions from "./MessageReactions";
+import { useToast } from "@/hooks/use-toast";
 
 interface ReplyToMessage {
   id: string;
@@ -68,10 +76,20 @@ export default function MessageBubble({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const { toast } = useToast();
 
   const handlePin = () => {
     if (onTogglePin) {
       onTogglePin(message.id);
+    }
+  };
+
+  const handleCopyText = () => {
+    if (message.content) {
+      navigator.clipboard.writeText(message.content);
+      toast({
+        description: "Đã sao chép tin nhắn",
+      });
     }
   };
 
@@ -144,14 +162,16 @@ export default function MessageBubble({
 
   return (
     <>
-      <div 
-        className={cn(
-          "flex mb-1 transition-all duration-300",
-          isSent ? "justify-end" : "justify-start",
-          isDeleting && "opacity-0 scale-95 -translate-x-4"
-        )}
-      >
-        <div className={cn("relative max-w-[75%] group")}>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div 
+            className={cn(
+              "flex mb-1 transition-all duration-300",
+              isSent ? "justify-end" : "justify-start",
+              isDeleting && "opacity-0 scale-95 -translate-x-4"
+            )}
+          >
+            <div className={cn("relative max-w-[75%] group")}>
           {/* Reaction picker */}
           <ReactionPicker
             isOpen={showReactionPicker}
@@ -368,8 +388,58 @@ export default function MessageBubble({
             onToggleReaction={(emoji) => onToggleReaction?.(message.id, emoji)}
             isSent={isSent}
           />
-        </div>
-      </div>
+            </div>
+          </div>
+        </ContextMenuTrigger>
+
+        <ContextMenuContent className="w-48">
+          {/* Reply */}
+          {onReply && (
+            <ContextMenuItem onClick={handleReply}>
+              <Reply className="h-4 w-4 mr-2" />
+              Trả lời
+            </ContextMenuItem>
+          )}
+
+          {/* Pin/Unpin */}
+          {onTogglePin && (
+            <ContextMenuItem onClick={handlePin}>
+              <Pin className={cn("h-4 w-4 mr-2", isPinned && "fill-current")} />
+              {isPinned ? "Bỏ ghim" : "Ghim tin nhắn"}
+            </ContextMenuItem>
+          )}
+
+          {/* Copy Text */}
+          {message.content && (
+            <ContextMenuItem onClick={handleCopyText}>
+              <Copy className="h-4 w-4 mr-2" />
+              Sao chép
+            </ContextMenuItem>
+          )}
+
+          {/* Forward */}
+          {onForward && (
+            <ContextMenuItem onClick={handleForward}>
+              <Forward className="h-4 w-4 mr-2" />
+              Chuyển tiếp
+            </ContextMenuItem>
+          )}
+
+          {/* Delete - only for sent messages */}
+          {isSent && onDelete && (
+            <>
+              <ContextMenuSeparator />
+              <ContextMenuItem 
+                onClick={() => setShowDeleteDialog(true)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Xóa tin nhắn
+              </ContextMenuItem>
+            </>
+          )}
+        </ContextMenuContent>
+      </ContextMenu>
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

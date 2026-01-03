@@ -34,21 +34,25 @@ export default function Navbar() {
           </Link>
 
           <div className="flex items-center gap-1">
-            {navItems.map(item => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path;
-              return (
-                <Link key={item.path} to={item.path}>
-                  <Button variant={isActive ? "default" : "ghost"} size="sm" className="gap-2">
-                    <Icon className="h-4 w-4" />
-                    <span className="hidden sm:inline">{item.label}</span>
-                  </Button>
-                </Link>
-              );
-            })}
+            {user && (
+              <>
+                {navItems.map(item => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <Link key={item.path} to={item.path}>
+                      <Button variant={isActive ? "default" : "ghost"} size="sm" className="gap-2">
+                        <Icon className="h-4 w-4" />
+                        <span className="hidden sm:inline">{item.label}</span>
+                      </Button>
+                    </Link>
+                  );
+                })}
 
-            <FriendRequestDropdown />
-            <NotificationBadge />
+                <FriendRequestDropdown />
+                <NotificationBadge />
+              </>
+            )}
 
             <Button 
               variant="ghost" 
@@ -90,7 +94,7 @@ export default function Navbar() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : (
+            ) : location.pathname !== '/auth' && (
               <Button asChild className="ml-2 gap-2 bg-primary hover:bg-primary-light">
                 <Link to="/auth"><UserIcon className="h-4 w-4" /><span className="hidden sm:inline">Đăng nhập</span></Link>
               </Button>

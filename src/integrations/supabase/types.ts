@@ -452,6 +452,7 @@ export type Database = {
           bio: string | null
           cover_url: string | null
           created_at: string
+          email: string | null
           id: string
           is_online: boolean | null
           job_title: string | null
@@ -471,6 +472,7 @@ export type Database = {
           bio?: string | null
           cover_url?: string | null
           created_at?: string
+          email?: string | null
           id: string
           is_online?: boolean | null
           job_title?: string | null
@@ -490,6 +492,7 @@ export type Database = {
           bio?: string | null
           cover_url?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           is_online?: boolean | null
           job_title?: string | null

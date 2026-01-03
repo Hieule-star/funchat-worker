@@ -16,6 +16,7 @@ interface UserProfile {
   username: string | null;
   avatar_url: string | null;
   phone_number: string | null;
+  email: string | null;
 }
 
 export default function UserSearchButton() {
@@ -40,11 +41,13 @@ export default function UserSearchButton() {
       try {
         let searchQuery = supabase
           .from("profiles")
-          .select("id, username, avatar_url, phone_number")
+          .select("id, username, avatar_url, phone_number, email")
           .neq("id", user?.id || "");
 
         if (activeTab === "username") {
           searchQuery = searchQuery.ilike("username", `%${query}%`);
+        } else if (activeTab === "email") {
+          searchQuery = searchQuery.ilike("email", `%${query}%`);
         } else if (activeTab === "phone") {
           const normalizedPhone = query.replace(/\D/g, "");
           searchQuery = searchQuery.ilike("phone_number", `%${normalizedPhone}%`);
@@ -110,6 +113,9 @@ export default function UserSearchButton() {
               <TabsTrigger value="username" className="flex-1 text-xs">
                 {t("userSearch.byUsername")}
               </TabsTrigger>
+              <TabsTrigger value="email" className="flex-1 text-xs">
+                {t("userSearch.byEmail")}
+              </TabsTrigger>
               <TabsTrigger value="phone" className="flex-1 text-xs">
                 {t("userSearch.byPhone")}
               </TabsTrigger>
@@ -118,6 +124,16 @@ export default function UserSearchButton() {
             <TabsContent value="username" className="mt-0">
               <Input
                 placeholder={t("userSearch.usernamePlaceholder")}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="mb-3"
+              />
+            </TabsContent>
+
+            <TabsContent value="email" className="mt-0">
+              <Input
+                type="email"
+                placeholder={t("userSearch.emailPlaceholder")}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="mb-3"

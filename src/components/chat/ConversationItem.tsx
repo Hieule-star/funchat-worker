@@ -4,11 +4,18 @@ import { vi } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Check, CheckCheck, Image, Video, FileText, Mic } from "lucide-react";
 
+interface TypingUser {
+  userId: string;
+  username: string;
+  avatarUrl?: string;
+}
+
 interface ConversationItemProps {
   conversation: any;
   isSelected: boolean;
   onClick: () => void;
   onlineUsers?: Set<string>;
+  typingUsers?: TypingUser[];
 }
 
 export default function ConversationItem({
@@ -16,6 +23,7 @@ export default function ConversationItem({
   isSelected,
   onClick,
   onlineUsers,
+  typingUsers,
 }: ConversationItemProps) {
   const otherUser = conversation.participants[0]?.profiles;
   const otherUserId = conversation.participants[0]?.user_id;
@@ -23,6 +31,7 @@ export default function ConversationItem({
   
   // Use real online status from presence and real unread count
   const isOnline = otherUserId && onlineUsers ? onlineUsers.has(otherUserId) : false;
+  const isTyping = typingUsers && typingUsers.length > 0;
   const unreadCount = conversation.unreadCount || 0;
 
   const formatLastSeen = () => {
@@ -132,11 +141,24 @@ export default function ConversationItem({
         
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm text-muted-foreground truncate flex items-center gap-1">
-            {/* Show tick for sent messages */}
-            {lastMessage && (
-              <CheckCheck className="h-4 w-4 text-[hsl(var(--wa-double-tick))] flex-shrink-0" />
+            {isTyping ? (
+              <>
+                <span className="text-[hsl(var(--wa-light-green))] italic">đang nhập</span>
+                <span className="flex gap-0.5 ml-0.5">
+                  <span className="w-1 h-1 bg-[hsl(var(--wa-light-green))] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1 h-1 bg-[hsl(var(--wa-light-green))] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1 h-1 bg-[hsl(var(--wa-light-green))] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </span>
+              </>
+            ) : (
+              <>
+                {/* Show tick for sent messages */}
+                {lastMessage && (
+                  <CheckCheck className="h-4 w-4 text-[hsl(var(--wa-double-tick))] flex-shrink-0" />
+                )}
+                <span className="truncate">{getMessagePreview()}</span>
+              </>
             )}
-            <span className="truncate">{getMessagePreview()}</span>
           </p>
           
           {unreadCount > 0 && (

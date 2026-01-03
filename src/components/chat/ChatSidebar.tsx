@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { usePresence } from "@/hooks/usePresence";
 import { useSoundSettings } from "@/hooks/useSoundSettings";
+import { useConversationsTyping } from "@/hooks/useConversationsTyping";
 import ConversationItem from "./ConversationItem";
 import { Button } from "@/components/ui/button";
 import { Search, MoreVertical, MessageSquarePlus, Camera, Users, Volume2, VolumeX } from "lucide-react";
@@ -33,6 +34,10 @@ export default function ChatSidebar({
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [showNewConversationModal, setShowNewConversationModal] = useState(false);
+  
+  // Get typing state for all conversations
+  const conversationIds = conversations.map(c => c.id);
+  const { getTypingUsers } = useConversationsTyping(conversationIds, user?.id);
 
   // Extracted fetchConversations to be callable from handleConversationCreated
   const fetchConversations = useCallback(async () => {
@@ -280,6 +285,7 @@ export default function ChatSidebar({
               isSelected={selectedConversation?.id === conversation.id}
               onClick={() => onSelectConversation(conversation)}
               onlineUsers={onlineUsers}
+              typingUsers={getTypingUsers(conversation.id)}
             />
           ))
         )}

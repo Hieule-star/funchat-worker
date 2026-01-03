@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -607,9 +608,8 @@ export default function Auth() {
                   Quên mật khẩu?
                 </button>
               </div>
-              <Input
+              <PasswordInput
                 id="signin-password"
-                type="password"
                 placeholder="••••••••"
                 value={signInPassword}
                 onChange={(e) => setSignInPassword(e.target.value)}
@@ -744,9 +744,8 @@ export default function Auth() {
 
             <div className="space-y-2">
               <Label htmlFor="signup-password">Mật khẩu</Label>
-              <Input
+              <PasswordInput
                 id="signup-password"
-                type="password"
                 placeholder="••••••••"
                 value={signUpPassword}
                 onChange={(e) => setSignUpPassword(e.target.value)}

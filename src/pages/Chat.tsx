@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
+import { useSoundSettings } from "@/hooks/useSoundSettings";
 
 export default function Chat() {
   const { user, profile } = useAuth();
@@ -48,6 +49,8 @@ export default function Chat() {
     selectedConversation?.id,
     user?.id
   );
+  
+  const { messageNotificationEnabled } = useSoundSettings();
 
   // Use global call context instead of direct hook
   const {
@@ -110,8 +113,8 @@ export default function Chat() {
             return;
           }
           
-          // Play notification sound for messages from other users
-          if (newMessageData.sender_id !== user?.id) {
+          // Play notification sound for messages from other users (if enabled)
+          if (newMessageData.sender_id !== user?.id && messageNotificationEnabled) {
             try {
               const audio = new Audio('/sounds/message-notification.mp3');
               audio.volume = 0.5;

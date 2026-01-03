@@ -209,9 +209,6 @@ export default function NewConversationModal({
             </Avatar>
             <div className="text-left">
               <span className="font-medium block">{userProfile.username}</span>
-              {userProfile.phone_number && (
-                <span className="text-xs text-muted-foreground">{userProfile.phone_number}</span>
-              )}
             </div>
           </button>
         ))}

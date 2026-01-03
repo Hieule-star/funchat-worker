@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import FriendRequestDropdown from "@/components/friends/FriendRequestDropdown";
 import NotificationBadge from "@/components/NotificationBadge";
-import logo from "@/assets/logo.jpg";
+import logo from "@/assets/logo.png";
 
 export default function Navbar() {
   const location = useLocation();

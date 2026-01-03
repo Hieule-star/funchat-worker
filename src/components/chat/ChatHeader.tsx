@@ -7,17 +7,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { formatDistanceToNow } from "date-fns";
+import { vi } from "date-fns/locale";
 
 interface ChatHeaderProps {
   conversation: any;
   onVideoCall?: () => void;
   onVoiceCall?: () => void;
   onBack?: () => void;
+  onlineUsers?: Set<string>;
 }
 
-export default function ChatHeader({ conversation, onVideoCall, onVoiceCall, onBack }: ChatHeaderProps) {
+export default function ChatHeader({ conversation, onVideoCall, onVoiceCall, onBack, onlineUsers }: ChatHeaderProps) {
   const otherUser = conversation.participants[0]?.profiles;
-  const isOnline = true; // Mock - connect to real presence later
+  const otherUserId = conversation.participants[0]?.user_id;
+  const isOnline = otherUserId && onlineUsers ? onlineUsers.has(otherUserId) : false;
+
+  const formatLastSeen = (lastSeen: string | null | undefined) => {
+    if (!lastSeen) return "Offline";
+    return `Hoạt động ${formatDistanceToNow(new Date(lastSeen), { addSuffix: true, locale: vi })}`;
+  };
 
   return (
     <div className="h-14 bg-[hsl(var(--wa-header-bg))] px-2 md:px-4 flex items-center gap-2 shadow-sm">
@@ -52,7 +61,7 @@ export default function ChatHeader({ conversation, onVideoCall, onVoiceCall, onB
             {otherUser?.username || "Người dùng"}
           </h3>
           <p className="text-xs text-primary-foreground/70 truncate">
-            {isOnline ? "Đang hoạt động" : "Offline"}
+            {isOnline ? "Đang hoạt động" : formatLastSeen(otherUser?.last_seen)}
           </p>
         </div>
       </div>

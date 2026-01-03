@@ -424,6 +424,32 @@ export default function Chat() {
     }
   };
 
+  const handleDeleteMessage = async (messageId: string) => {
+    const { error } = await supabase
+      .from("messages")
+      .delete()
+      .eq("id", messageId)
+      .eq("sender_id", user?.id);
+
+    if (error) {
+      console.error("Error deleting message:", error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể xóa tin nhắn. Vui lòng thử lại.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Remove from local state with animation already applied
+    setMessages(prev => prev.filter(m => m.id !== messageId));
+    
+    toast({
+      title: "Đã xóa",
+      description: "Tin nhắn đã được xóa"
+    });
+  };
+
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-background">
       <ChatSidebar
@@ -451,6 +477,7 @@ export default function Chat() {
                 messages={messages} 
                 currentUserId={user?.id}
                 typingUsers={typingUsers}
+                onDeleteMessage={handleDeleteMessage}
               />
             )}
 

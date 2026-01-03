@@ -32,6 +32,7 @@ interface MessageListProps {
   onTogglePin?: (messageId: string) => void;
   onEditMessage?: (message: any) => void;
   onRecallMessage?: (messageId: string) => Promise<void>;
+  wallpaperStyle?: React.CSSProperties;
 }
 
 export default function MessageList({ 
@@ -46,7 +47,8 @@ export default function MessageList({
   pinnedMessageIds = new Set(),
   onTogglePin,
   onEditMessage,
-  onRecallMessage
+  onRecallMessage,
+  wallpaperStyle
 }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
@@ -103,7 +105,7 @@ export default function MessageList({
   };
 
   return (
-    <ScrollArea className="flex-1 bg-[hsl(var(--wa-chat-bg))]">
+    <ScrollArea className="flex-1" style={wallpaperStyle || { backgroundColor: 'hsl(var(--wa-chat-bg))' }}>
       {/* WhatsApp-style wallpaper pattern overlay */}
       <div 
         className="absolute inset-0 opacity-[0.06] pointer-events-none"

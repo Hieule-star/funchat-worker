@@ -219,6 +219,7 @@ export type Database = {
           conversation_id: string
           created_at: string
           id: string
+          is_forwarded: boolean
           is_read: boolean
           media_type: string | null
           media_url: string | null
@@ -232,6 +233,7 @@ export type Database = {
           conversation_id: string
           created_at?: string
           id?: string
+          is_forwarded?: boolean
           is_read?: boolean
           media_type?: string | null
           media_url?: string | null
@@ -245,6 +247,7 @@ export type Database = {
           conversation_id?: string
           created_at?: string
           id?: string
+          is_forwarded?: boolean
           is_read?: boolean
           media_type?: string | null
           media_url?: string | null

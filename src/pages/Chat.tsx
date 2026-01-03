@@ -266,6 +266,7 @@ export default function Chat() {
       content: message.content,
       media_url: message.media_url,
       media_type: message.media_type,
+      is_forwarded: true,
     });
 
     if (error) {

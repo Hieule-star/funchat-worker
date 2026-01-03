@@ -19,9 +19,9 @@ export default function Navbar() {
   };
 
   const navItems = [
-    { icon: MessageCircle, label: "Chat", path: "/" },
-    { icon: Users, label: "Friends", path: "/friends" },
-    { icon: UserCircle, label: "Profile", path: "/profile" },
+    { icon: MessageCircle, label: "Trò chuyện", path: "/" },
+    { icon: Users, label: "Danh bạ", path: "/friends" },
+    { icon: UserCircle, label: "Hồ sơ", path: "/profile" },
   ];
 
   return (
@@ -86,7 +86,7 @@ export default function Navbar() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link to="/profile"><UserIcon className="mr-2 h-4 w-4" />Profile</Link>
+                    <Link to="/profile"><UserIcon className="mr-2 h-4 w-4" />Hồ sơ</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => signOut()}>

@@ -1,0 +1,22 @@
+// Cute SVG patterns for Telegram-style wallpapers
+// Each pattern is a data URI with cute icons at ~15% opacity
+
+export const CUTE_PATTERNS = {
+  unicorn: `data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.15'%3E%3Cpath d='M20 10l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6l2-6zm40 0l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6l2-6zM20 50l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6l2-6zm40 0l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6l2-6z'/%3E%3Ccircle cx='40' cy='30' r='4'/%3E%3Ccircle cx='40' cy='70' r='4'/%3E%3Cpath d='M35 20l5-8 5 8h-10z'/%3E%3Cpath d='M35 60l5-8 5 8h-10z'/%3E%3C/g%3E%3C/svg%3E`,
+
+  bunny: `data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.15'%3E%3Cellipse cx='20' cy='25' rx='6' ry='10'/%3E%3Cellipse cx='60' cy='25' rx='6' ry='10'/%3E%3Ccircle cx='20' cy='40' r='8'/%3E%3Ccircle cx='60' cy='40' r='8'/%3E%3Cpath d='M35 60c0-3 2-5 5-5s5 2 5 5-2 5-5 5-5-2-5-5z'/%3E%3Ccircle cx='10' cy='70' r='3'/%3E%3Ccircle cx='70' cy='70' r='3'/%3E%3Cpath d='M38 10l2 4 2-4-2-2-2 2zm0 60l2 4 2-4-2-2-2 2z'/%3E%3C/g%3E%3C/svg%3E`,
+
+  stars: `data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.15'%3E%3Cpath d='M15 5l1.5 4.5h4.5l-3.5 2.5 1.5 4.5-4-3-4 3 1.5-4.5-3.5-2.5h4.5L15 5zm30 0l1.5 4.5h4.5l-3.5 2.5 1.5 4.5-4-3-4 3 1.5-4.5-3.5-2.5h4.5L45 5zM15 35l1.5 4.5h4.5l-3.5 2.5 1.5 4.5-4-3-4 3 1.5-4.5-3.5-2.5h4.5L15 35zm30 0l1.5 4.5h4.5l-3.5 2.5 1.5 4.5-4-3-4 3 1.5-4.5-3.5-2.5h4.5L45 35z'/%3E%3Ccircle cx='30' cy='20' r='2'/%3E%3Ccircle cx='30' cy='50' r='2'/%3E%3Ccircle cx='5' cy='25' r='1.5'/%3E%3Ccircle cx='55' cy='25' r='1.5'/%3E%3C/g%3E%3C/svg%3E`,
+
+  crystal: `data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.15'%3E%3Cpath d='M10 15l5-10 5 10-5 5-5-5zm30 0l5-10 5 10-5 5-5-5zM10 45l5-10 5 10-5 5-5-5zm30 0l5-10 5 10-5 5-5-5z'/%3E%3Ccircle cx='30' cy='10' r='3'/%3E%3Ccircle cx='30' cy='50' r='3'/%3E%3Cpath d='M25 30l5-5 5 5-5 5-5-5z'/%3E%3C/g%3E%3C/svg%3E`,
+
+  cherry: `data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.15'%3E%3Ccircle cx='15' cy='25' r='8'/%3E%3Ccircle cx='25' cy='30' r='6'/%3E%3Cpath d='M18 17c5-8 12-12 20-10' stroke='%23ffffff' stroke-opacity='0.15' stroke-width='2' fill='none'/%3E%3Ccircle cx='55' cy='55' r='8'/%3E%3Ccircle cx='65' cy='60' r='6'/%3E%3Cpath d='M58 47c5-8 12-12 20-10' stroke='%23ffffff' stroke-opacity='0.15' stroke-width='2' fill='none'/%3E%3Ccircle cx='60' cy='15' r='4'/%3E%3Ccircle cx='20' cy='65' r='4'/%3E%3C/g%3E%3C/svg%3E`,
+
+  kitty: `data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.15'%3E%3Cpath d='M15 35c0-8 5-15 12-15s12 7 12 15-5 12-12 12-12-4-12-12z'/%3E%3Cpath d='M8 20l7 5v-10l-7 5zm24 0l-7 5v-10l7 5z'/%3E%3Ccircle cx='22' cy='32' r='2'/%3E%3Ccircle cx='32' cy='32' r='2'/%3E%3Cpath d='M55 65c0-8 5-15 12-15s12 7 12 15-5 12-12 12-12-4-12-12z'/%3E%3Cpath d='M48 50l7 5v-10l-7 5zm24 0l-7 5v-10l7 5z'/%3E%3Ccircle cx='62' cy='62' r='2'/%3E%3Ccircle cx='72' cy='62' r='2'/%3E%3C/g%3E%3C/svg%3E`,
+
+  rainbow: `data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.15'%3E%3Cpath d='M10 40c0-11 9-20 20-20s20 9 20 20' stroke='%23ffffff' stroke-opacity='0.15' stroke-width='3' fill='none'/%3E%3Cellipse cx='55' cy='25' rx='12' ry='6'/%3E%3Cellipse cx='70' cy='25' rx='8' ry='4'/%3E%3Cellipse cx='25' cy='60' rx='10' ry='5'/%3E%3Cellipse cx='55' cy='65' rx='12' ry='6'/%3E%3Ccircle cx='70' cy='55' r='3'/%3E%3Ccircle cx='10' cy='20' r='3'/%3E%3C/g%3E%3C/svg%3E`,
+
+  hearts: `data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.15'%3E%3Cpath d='M15 20c-3-3-8-3-10 1s0 8 10 14c10-6 12-10 10-14s-7-4-10-1z'/%3E%3Cpath d='M45 20c-3-3-8-3-10 1s0 8 10 14c10-6 12-10 10-14s-7-4-10-1z'/%3E%3Cpath d='M30 50c-2-2-5-2-6 0s0 5 6 8c6-3 7-6 6-8s-4-2-6 0z'/%3E%3Ccircle cx='8' cy='45' r='2'/%3E%3Ccircle cx='52' cy='45' r='2'/%3E%3Cpath d='M28 8l2 4 2-4-2-2-2 2z'/%3E%3C/g%3E%3C/svg%3E`,
+};
+
+export type PatternKey = keyof typeof CUTE_PATTERNS;

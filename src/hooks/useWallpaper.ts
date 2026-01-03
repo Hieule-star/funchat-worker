@@ -4,8 +4,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { WALLPAPER_PRESETS } from '@/lib/wallpaper-presets';
 
 interface WallpaperSettings {
-  type: 'gradient' | 'image' | 'none';
+  type: 'gradient' | 'image' | 'pattern' | 'none';
   value: string | null;
+  pattern?: string;
 }
 
 const STORAGE_KEY = 'chat_wallpaper_';
@@ -64,17 +65,22 @@ export function useWallpaper(conversationId?: string) {
     fetchWallpaper();
   }, [user?.id, conversationId]);
 
-  const updateWallpaper = useCallback(async (type: 'gradient' | 'image' | 'none', value: string | null) => {
+  const updateWallpaper = useCallback(async (type: 'gradient' | 'image' | 'pattern' | 'none', value: string | null, pattern?: string) => {
     if (!user?.id) return;
 
     const cacheKey = STORAGE_KEY + (conversationId || 'global') + '_' + user.id;
-    const newSettings: WallpaperSettings = { type, value };
+    const newSettings: WallpaperSettings = { type, value, pattern };
     
     // Update state and cache immediately
     setWallpaper(newSettings);
     localStorage.setItem(cacheKey, JSON.stringify(newSettings));
 
     try {
+      // For pattern type, store both gradient and pattern in value as JSON
+      const storedValue = type === 'pattern' && pattern 
+        ? JSON.stringify({ gradient: value, pattern })
+        : value;
+
       // Check if record exists
       const { data: existing } = await supabase
         .from('chat_wallpapers')
@@ -89,7 +95,7 @@ export function useWallpaper(conversationId?: string) {
           .from('chat_wallpapers')
           .update({
             wallpaper_type: type,
-            wallpaper_value: value
+            wallpaper_value: storedValue
           })
           .eq('id', existing.id);
       } else {
@@ -100,7 +106,7 @@ export function useWallpaper(conversationId?: string) {
             user_id: user.id,
             conversation_id: conversationId || null,
             wallpaper_type: type,
-            wallpaper_value: value
+            wallpaper_value: storedValue
           });
       }
     } catch (error) {
@@ -118,6 +124,14 @@ export function useWallpaper(conversationId?: string) {
         backgroundImage: `url(${wallpaper.value})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center'
+      };
+    }
+
+    if (wallpaper.type === 'pattern' && wallpaper.pattern) {
+      return {
+        backgroundImage: `url("${wallpaper.pattern}"), ${wallpaper.value}`,
+        backgroundSize: 'auto, cover',
+        backgroundRepeat: 'repeat, no-repeat'
       };
     }
     

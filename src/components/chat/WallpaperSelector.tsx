@@ -12,8 +12,8 @@ import { useToast } from '@/components/ui/use-toast';
 interface WallpaperSelectorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  currentWallpaper: { type: string; value: string | null };
-  onSelect: (type: 'gradient' | 'image' | 'none', value: string | null) => void;
+  currentWallpaper: { type: string; value: string | null; pattern?: string };
+  onSelect: (type: 'gradient' | 'image' | 'pattern' | 'none', value: string | null, pattern?: string) => void;
 }
 
 export default function WallpaperSelector({
@@ -110,7 +110,11 @@ export default function WallpaperSelector({
       setCustomImageUrl(null);
       setSelectedPreset(null);
     } else if (selectedPreset) {
-      onSelect(selectedPreset.type as 'gradient' | 'none', selectedPreset.value);
+      onSelect(
+        selectedPreset.type as 'gradient' | 'pattern' | 'none', 
+        selectedPreset.value,
+        selectedPreset.pattern
+      );
       onOpenChange(false);
       setSelectedPreset(null);
     }
@@ -130,6 +134,13 @@ export default function WallpaperSelector({
   const getPreviewStyle = (preset: WallpaperPreset): React.CSSProperties => {
     if (preset.type === 'none' || !preset.value) {
       return { backgroundColor: 'hsl(var(--muted))' };
+    }
+    if (preset.type === 'pattern' && preset.pattern) {
+      return { 
+        backgroundImage: `url("${preset.pattern}"), ${preset.value}`,
+        backgroundSize: 'auto, cover',
+        backgroundRepeat: 'repeat, no-repeat'
+      };
     }
     if (preset.value.startsWith('linear-gradient')) {
       return { background: preset.value };
@@ -214,15 +225,7 @@ export default function WallpaperSelector({
                   style={getPreviewStyle(preset)}
                 />
                 
-                {/* Overlay pattern for non-none presets */}
-                {preset.type !== 'none' && preset.id !== 'default' && (
-                  <div 
-                    className="absolute inset-0 opacity-10"
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M0 0h10v10H0V0zm10 10h10v10H10V10z'/%3E%3C/g%3E%3C/svg%3E")`,
-                    }}
-                  />
-                )}
+                {/* Pattern wallpapers already include their pattern in background */}
 
                 {/* Emoji and name */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center">

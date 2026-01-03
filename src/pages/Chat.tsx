@@ -277,6 +277,12 @@ export default function Chat() {
       return;
     }
 
+    // Update conversation updated_at to trigger realtime update for recipient
+    await supabase
+      .from("conversations")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", targetConversationId);
+
     toast({
       title: "Đã chuyển tiếp",
       description: "Tin nhắn đã được chuyển tiếp thành công"

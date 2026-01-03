@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { usePresence } from "@/hooks/usePresence";
 import ConversationItem from "./ConversationItem";
 import { Button } from "@/components/ui/button";
 import { Search, MoreVertical, MessageSquarePlus, Camera, Users } from "lucide-react";
@@ -24,6 +25,7 @@ export default function ChatSidebar({
   onSelectConversation,
 }: ChatSidebarProps) {
   const { user, profile } = useAuth();
+  const { onlineUsers } = usePresence(user?.id);
   const [conversations, setConversations] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
@@ -260,6 +262,7 @@ export default function ChatSidebar({
               conversation={conversation}
               isSelected={selectedConversation?.id === conversation.id}
               onClick={() => onSelectConversation(conversation)}
+              onlineUsers={onlineUsers}
             />
           ))
         )}

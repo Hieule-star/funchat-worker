@@ -8,18 +8,21 @@ interface ConversationItemProps {
   conversation: any;
   isSelected: boolean;
   onClick: () => void;
+  onlineUsers?: Set<string>;
 }
 
 export default function ConversationItem({
   conversation,
   isSelected,
   onClick,
+  onlineUsers,
 }: ConversationItemProps) {
   const otherUser = conversation.participants[0]?.profiles;
+  const otherUserId = conversation.participants[0]?.user_id;
   const lastMessage = conversation.lastMessage;
   
-  // Use real unread count from props, mock online status for now
-  const isOnline = otherUser?.is_online || false;
+  // Use real online status from presence and real unread count
+  const isOnline = otherUserId && onlineUsers ? onlineUsers.has(otherUserId) : false;
   const unreadCount = conversation.unreadCount || 0;
 
   const getMessagePreview = () => {

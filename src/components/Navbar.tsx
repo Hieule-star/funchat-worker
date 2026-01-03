@@ -1,28 +1,23 @@
 import { Link, useLocation } from "react-router-dom";
-import { Users, UserCircle, Sun, Moon, LogOut, User as UserIcon, MessageCircle } from "lucide-react";
+import { Sun, Moon, LogOut, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "next-themes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import UserSearchButton from "@/components/UserSearchButton";
 import logo from "@/assets/logo.png";
 
 export default function Navbar() {
   const location = useLocation();
   const { user, profile, signOut } = useAuth();
   const { language, toggleLanguage, t } = useLanguage();
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
 
   const toggleTheme = () => {
     setTheme(resolvedTheme === "dark" ? "light" : "dark");
   };
-
-  const navItems = [
-    { icon: MessageCircle, label: t("nav.chat"), path: "/" },
-    { icon: Users, label: t("nav.contacts"), path: "/friends" },
-    { icon: UserCircle, label: t("nav.profile"), path: "/profile" },
-  ];
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-md">
@@ -36,18 +31,7 @@ export default function Navbar() {
           <div className="flex items-center gap-1">
             {user && (
               <>
-                {navItems.map(item => {
-                  const Icon = item.icon;
-                  const isActive = location.pathname === item.path;
-                  return (
-                    <Link key={item.path} to={item.path}>
-                      <Button variant={isActive ? "default" : "ghost"} size="sm" className="gap-2">
-                        <Icon className="h-4 w-4" />
-                        <span className="hidden sm:inline">{item.label}</span>
-                      </Button>
-                    </Link>
-                  );
-                })}
+                <UserSearchButton />
 
                 <Button
                   variant="ghost"

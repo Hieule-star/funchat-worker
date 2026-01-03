@@ -21,11 +21,13 @@ import NewConversationModal from "./NewConversationModal";
 interface ChatSidebarProps {
   selectedConversation: any;
   onSelectConversation: (conversation: any) => void;
+  onConversationsChange?: (conversations: any[]) => void;
 }
 
 export default function ChatSidebar({
   selectedConversation,
   onSelectConversation,
+  onConversationsChange,
 }: ChatSidebarProps) {
   const { user, profile } = useAuth();
   const { onlineUsers } = usePresence(user?.id);
@@ -100,6 +102,7 @@ export default function ChatSidebar({
       });
 
       setConversations(conversationsWithDetails);
+      onConversationsChange?.(conversationsWithDetails);
     }
   }, [user]);
 

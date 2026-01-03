@@ -10,18 +10,26 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 
+interface TypingUser {
+  userId: string;
+  username: string;
+  avatarUrl?: string;
+}
+
 interface ChatHeaderProps {
   conversation: any;
   onVideoCall?: () => void;
   onVoiceCall?: () => void;
   onBack?: () => void;
   onlineUsers?: Set<string>;
+  typingUsers?: TypingUser[];
 }
 
-export default function ChatHeader({ conversation, onVideoCall, onVoiceCall, onBack, onlineUsers }: ChatHeaderProps) {
+export default function ChatHeader({ conversation, onVideoCall, onVoiceCall, onBack, onlineUsers, typingUsers }: ChatHeaderProps) {
   const otherUser = conversation.participants[0]?.profiles;
   const otherUserId = conversation.participants[0]?.user_id;
   const isOnline = otherUserId && onlineUsers ? onlineUsers.has(otherUserId) : false;
+  const isTyping = typingUsers && typingUsers.length > 0;
 
   const formatLastSeen = (lastSeen: string | null | undefined) => {
     if (!lastSeen) return "Offline";
@@ -60,8 +68,21 @@ export default function ChatHeader({ conversation, onVideoCall, onVoiceCall, onB
           <h3 className="font-semibold text-sm text-primary-foreground truncate">
             {otherUser?.username || "Người dùng"}
           </h3>
-          <p className="text-xs text-primary-foreground/70 truncate">
-            {isOnline ? "Đang hoạt động" : formatLastSeen(otherUser?.last_seen)}
+          <p className="text-xs text-primary-foreground/70 truncate flex items-center gap-1">
+            {isTyping ? (
+              <>
+                <span className="text-[hsl(var(--wa-light-green))]">Đang nhập</span>
+                <span className="flex gap-0.5">
+                  <span className="w-1 h-1 bg-[hsl(var(--wa-light-green))] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1 h-1 bg-[hsl(var(--wa-light-green))] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1 h-1 bg-[hsl(var(--wa-light-green))] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </span>
+              </>
+            ) : isOnline ? (
+              "Đang hoạt động"
+            ) : (
+              formatLastSeen(otherUser?.last_seen)
+            )}
           </p>
         </div>
       </div>

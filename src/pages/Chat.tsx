@@ -411,6 +411,7 @@ export default function Chat() {
               onVideoCall={handleVideoCall}
               onVoiceCall={handleVoiceCall}
               onlineUsers={onlineUsers}
+              typingUsers={typingUsers}
             />
             
             {loading ? (

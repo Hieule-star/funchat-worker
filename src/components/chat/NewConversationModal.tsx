@@ -25,7 +25,6 @@ interface UserProfile {
   id: string;
   username: string;
   avatar_url: string | null;
-  phone_number?: string | null;
 }
 
 export default function NewConversationModal({

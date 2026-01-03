@@ -59,7 +59,7 @@ export default function Chat() {
   } = useCall();
 
   useEffect(() => {
-    if (!selectedConversation) return;
+    if (!selectedConversation || !user) return;
 
     const fetchMessages = async () => {
       setLoading(true);
@@ -76,6 +76,14 @@ export default function Chat() {
         setMessages(data);
       }
       setLoading(false);
+
+      // Mark messages as read after fetching
+      await supabase
+        .from("messages")
+        .update({ is_read: true })
+        .eq("conversation_id", selectedConversation.id)
+        .neq("sender_id", user.id)
+        .eq("is_read", false);
     };
 
     fetchMessages();

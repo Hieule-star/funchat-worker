@@ -65,10 +65,19 @@ export default function ChatSidebar({
             .limit(1)
             .single();
 
+          // Fetch unread count - only count messages from other users that are unread
+          const { count: unreadCount } = await supabase
+            .from("messages")
+            .select("*", { count: "exact", head: true })
+            .eq("conversation_id", item.conversations.id)
+            .eq("is_read", false)
+            .neq("sender_id", user.id);
+
           return {
             ...item.conversations,
             participants: participants || [],
             lastMessage,
+            unreadCount: unreadCount || 0,
           };
         })
       );
@@ -89,7 +98,7 @@ export default function ChatSidebar({
 
     fetchConversations();
 
-    // Subscribe to both conversations and conversation_participants changes
+    // Subscribe to conversations, participants, and messages changes
     const channel = supabase
       .channel("conversations-updates")
       .on(
@@ -108,6 +117,15 @@ export default function ChatSidebar({
           schema: "public",
           table: "conversation_participants",
           filter: `user_id=eq.${user.id}`,
+        },
+        () => fetchConversations()
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "messages",
         },
         () => fetchConversations()
       )

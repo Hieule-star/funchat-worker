@@ -110,6 +110,17 @@ export default function Chat() {
             return;
           }
           
+          // Play notification sound for messages from other users
+          if (newMessageData.sender_id !== user?.id) {
+            try {
+              const audio = new Audio('/sounds/message-notification.mp3');
+              audio.volume = 0.5;
+              audio.play().catch(err => console.log('Audio play blocked:', err));
+            } catch (err) {
+              console.log('Could not play notification sound:', err);
+            }
+          }
+          
           // Fetch only sender profile info
           const { data: senderData } = await supabase
             .from("profiles")

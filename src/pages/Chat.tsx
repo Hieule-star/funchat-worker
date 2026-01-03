@@ -9,6 +9,7 @@ import AgoraVideoCallModal from "@/components/chat/AgoraVideoCallModal";
 import DeviceSelectionModal from "@/components/chat/DeviceSelectionModal";
 import OutgoingCallModal from "@/components/chat/OutgoingCallModal";
 import { ForwardMessageModal } from "@/components/chat/ForwardMessageModal";
+import PinnedMessagesPanel from "@/components/chat/PinnedMessagesPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -16,6 +17,7 @@ import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { useSoundSettings } from "@/hooks/useSoundSettings";
 import { usePresence } from "@/hooks/usePresence";
 import { useMessageReactions } from "@/hooks/useMessageReactions";
+import { usePinnedMessages } from "@/hooks/usePinnedMessages";
 
 export default function Chat() {
   const { user, profile } = useAuth();
@@ -28,6 +30,7 @@ export default function Chat() {
   const [replyTo, setReplyTo] = useState<any>(null);
   const [forwardMessage, setForwardMessage] = useState<any>(null);
   const [forwardModalOpen, setForwardModalOpen] = useState(false);
+  const [pinnedPanelOpen, setPinnedPanelOpen] = useState(false);
   const [videoCallOpen, setVideoCallOpen] = useState(false);
   const [deviceSelectionOpen, setDeviceSelectionOpen] = useState(false);
   const [callMode, setCallMode] = useState<'video' | 'audio'>('video');
@@ -62,6 +65,14 @@ export default function Chat() {
   
   // Reactions hook
   const { reactions, fetchReactions, toggleReaction } = useMessageReactions(selectedConversation?.id);
+  
+  // Pinned messages hook
+  const { 
+    pinnedMessages, 
+    pinnedMessageIds, 
+    togglePin,
+    unpinMessage 
+  } = usePinnedMessages(selectedConversation?.id);
 
   // Use global call context instead of direct hook
   const {
@@ -524,6 +535,8 @@ export default function Chat() {
               onVoiceCall={handleVoiceCall}
               onlineUsers={onlineUsers}
               typingUsers={typingUsers}
+              pinnedCount={pinnedMessages.length}
+              onOpenPinnedMessages={() => setPinnedPanelOpen(true)}
             />
             
             {loading ? (
@@ -540,6 +553,17 @@ export default function Chat() {
                 onForwardMessage={handleForwardMessage}
                 reactions={reactions}
                 onToggleReaction={toggleReaction}
+                pinnedMessageIds={pinnedMessageIds}
+                onTogglePin={async (messageId) => {
+                  const success = await togglePin(messageId);
+                  if (success) {
+                    const isPinned = pinnedMessageIds.has(messageId);
+                    toast({
+                      title: isPinned ? "Đã bỏ ghim" : "Đã ghim",
+                      description: isPinned ? "Tin nhắn đã được bỏ ghim" : "Tin nhắn đã được ghim"
+                    });
+                  }
+                }}
               />
             )}
 
@@ -667,6 +691,33 @@ export default function Chat() {
             }
           }))}
         onForward={handleForward}
+      />
+
+      <PinnedMessagesPanel
+        isOpen={pinnedPanelOpen}
+        onClose={() => setPinnedPanelOpen(false)}
+        pinnedMessages={pinnedMessages}
+        onUnpin={async (messageId) => {
+          const success = await unpinMessage(messageId);
+          if (success) {
+            toast({
+              title: "Đã bỏ ghim",
+              description: "Tin nhắn đã được bỏ ghim"
+            });
+          }
+        }}
+        onJumpToMessage={(messageId) => {
+          setPinnedPanelOpen(false);
+          // Scroll to message
+          setTimeout(() => {
+            const element = document.getElementById(`message-${messageId}`);
+            if (element) {
+              element.scrollIntoView({ behavior: "smooth", block: "center" });
+              element.classList.add("bg-primary/10");
+              setTimeout(() => element.classList.remove("bg-primary/10"), 2000);
+            }
+          }, 300);
+        }}
       />
     </div>
   );

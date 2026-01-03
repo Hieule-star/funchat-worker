@@ -30,22 +30,22 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Get the correct redirect URL based on environment
-const getRedirectUrl = () => {
+const getRedirectUrl = (path: string = '/auth') => {
   const origin = window.location.origin;
   const hostname = window.location.hostname;
 
   // Production: fuprofile.org
   if (hostname === 'fuprofile.org') {
-    return 'https://fuprofile.org/auth';
+    return `https://fuprofile.org${path}`;
   }
 
   // Lovable preview/prod
   if (origin.includes('lovableproject.com') || origin.includes('lovable.app')) {
-    return `${origin}/auth`;
+    return `${origin}${path}`;
   }
 
   // Local dev
-  return 'http://localhost:3000/auth';
+  return `http://localhost:3000${path}`;
 };
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, username?: string) => {
-    const redirectUrl = getRedirectUrl();
+    const redirectUrl = getRedirectUrl('/auth');
     
     const { error } = await supabase.auth.signUp({
       email,
@@ -148,7 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
-    const redirectUrl = getRedirectUrl();
+    const redirectUrl = getRedirectUrl('/auth');
     
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -161,7 +161,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithFacebook = async () => {
-    const redirectUrl = getRedirectUrl();
+    const redirectUrl = getRedirectUrl('/auth');
     
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "facebook",
@@ -194,7 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const resetPassword = async (email: string) => {
-    const redirectUrl = getRedirectUrl();
+    const redirectUrl = getRedirectUrl('/reset-password');
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: redirectUrl,
     });

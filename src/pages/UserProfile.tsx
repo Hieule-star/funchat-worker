@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
   Loader2, 
@@ -24,6 +24,7 @@ interface UserProfileData {
   job_title?: string;
   location?: string;
   reputation_score?: number;
+  phone_number?: string | null;
 }
 
 export default function UserProfile() {
@@ -34,6 +35,7 @@ export default function UserProfile() {
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [friendsCount, setFriendsCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [creatingConversation, setCreatingConversation] = useState(false);
 
   useEffect(() => {
     if (userId === user?.id) {
@@ -69,6 +71,49 @@ export default function UserProfile() {
     }
   };
 
+  // Direct message - create conversation and navigate to chat
+  const handleDirectMessage = async () => {
+    if (!user || !userId) return;
+
+    try {
+      setCreatingConversation(true);
+      
+      const { data: conversationId, error } = await supabase.rpc(
+        'create_conversation_with_participants',
+        {
+          current_user_id: user.id,
+          friend_id: userId
+        }
+      );
+
+      if (error) throw error;
+
+      // Navigate to chat with the conversation selected
+      navigate(`/chat?conversation=${conversationId}`);
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể tạo cuộc trò chuyện",
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingConversation(false);
+    }
+  };
+
+  // Direct video call
+  const handleVideoCall = () => {
+    if (!userId) return;
+    navigate(`/call?channel=user-${userId}&type=video`);
+  };
+
+  // Direct voice call
+  const handleVoiceCall = () => {
+    if (!userId) return;
+    navigate(`/call?channel=user-${userId}&type=audio`);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -97,14 +142,37 @@ export default function UserProfile() {
           onCoverEditClick={() => {}}
         />
 
+        {/* Action Buttons - WhatsApp-like direct actions */}
         <Card className="border-primary/20">
           <CardContent className="py-4">
-            <div className="flex items-center justify-center gap-4">
-              <Button onClick={() => navigate(`/chat`)} className="bg-primary">
-                <MessageSquare className="h-4 w-4 mr-2" />Nhắn tin
+            <div className="flex items-center justify-center gap-3">
+              <Button 
+                onClick={handleDirectMessage} 
+                className="bg-primary flex-1 sm:flex-none"
+                disabled={creatingConversation}
+              >
+                {creatingConversation ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                )}
+                Nhắn tin
               </Button>
-              <Button variant="outline" onClick={() => navigate(`/call?channel=user-${userId}`)}>
-                <Video className="h-4 w-4 mr-2" />Gọi Video
+              <Button 
+                variant="outline" 
+                onClick={handleVideoCall}
+                className="flex-1 sm:flex-none"
+              >
+                <Video className="h-4 w-4 mr-2" />
+                Video
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleVoiceCall}
+                className="flex-1 sm:flex-none"
+              >
+                <Phone className="h-4 w-4 mr-2" />
+                Gọi
               </Button>
             </div>
           </CardContent>

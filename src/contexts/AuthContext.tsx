@@ -7,6 +7,7 @@ interface Profile {
   username: string | null;
   avatar_url: string | null;
   bio: string | null;
+  phone_number?: string | null;
 }
 
 interface AuthContextType {
@@ -16,6 +17,8 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, username?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithPhone: (phone: string) => Promise<{ error: any }>;
+  verifyOtp: (phone: string, token: string) => Promise<{ error: any }>;
   signInWithGoogle: () => Promise<{ error: any }>;
   signInWithFacebook: () => Promise<{ error: any }>;
   signInWithTelegram: () => Promise<{ error: any }>;
@@ -125,6 +128,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error };
   };
 
+  // Phone authentication - send OTP
+  const signInWithPhone = async (phone: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      phone: phone,
+    });
+    return { error };
+  };
+
+  // Verify OTP code
+  const verifyOtp = async (phone: string, token: string) => {
+    const { error } = await supabase.auth.verifyOtp({
+      phone: phone,
+      token: token,
+      type: 'sms'
+    });
+    return { error };
+  };
+
   const signInWithGoogle = async () => {
     const redirectUrl = getRedirectUrl();
     
@@ -171,12 +192,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error };
   };
 
-  // TODO: Future expansion - Apple login
-  // const signInWithApple = async () => { ... }
-
-  // TODO: Future expansion - Twitter/X login
-  // const signInWithTwitter = async () => { ... }
-
   const signOut = async () => {
     await supabase.auth.signOut();
     setProfile(null);
@@ -191,6 +206,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading,
         signUp,
         signIn,
+        signInWithPhone,
+        verifyOtp,
         signInWithGoogle,
         signInWithFacebook,
         signInWithTelegram,

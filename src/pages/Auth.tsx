@@ -7,10 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, Phone, Mail } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import logo from "@/assets/logo.png";
 
 const signUpSchema = z.object({
   email: z.string().email("Email không hợp lệ").max(255),
@@ -23,14 +25,30 @@ const signInSchema = z.object({
   password: z.string().min(1, "Vui lòng nhập mật khẩu"),
 });
 
+const phoneSchema = z.object({
+  phone: z.string().min(9, "Số điện thoại không hợp lệ").max(15),
+});
+
+type AuthMethod = "email" | "phone";
+
 export default function Auth() {
-  const { user, signUp, signIn, signInWithGoogle, signInWithFacebook, resendEmailVerification } = useAuth();
+  const { user, signUp, signIn, signInWithPhone, verifyOtp, signInWithGoogle, signInWithFacebook, resendEmailVerification } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [showConfirmationSuccess, setShowConfirmationSuccess] = useState(false);
   const [showEmailNotVerified, setShowEmailNotVerified] = useState(false);
   const [unverifiedEmail, setUnverifiedEmail] = useState("");
+  
+  // Auth method toggle
+  const [authMethod, setAuthMethod] = useState<AuthMethod>("email");
+  
+  // Phone auth states
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [countryCode, setCountryCode] = useState("+84");
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [otpCountdown, setOtpCountdown] = useState(0);
 
   // Sign Up Form
   const [signUpEmail, setSignUpEmail] = useState("");
@@ -40,6 +58,14 @@ export default function Auth() {
   // Sign In Form
   const [signInEmail, setSignInEmail] = useState("");
   const [signInPassword, setSignInPassword] = useState("");
+
+  // OTP Countdown timer
+  useEffect(() => {
+    if (otpCountdown > 0) {
+      const timer = setTimeout(() => setOtpCountdown(otpCountdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [otpCountdown]);
 
   // Handle email confirmation from URL hash
   useEffect(() => {
@@ -174,6 +200,86 @@ export default function Auth() {
     }
   };
 
+  // Phone authentication handlers
+  const handleSendOtp = async () => {
+    const fullPhone = `${countryCode}${phoneNumber.replace(/^0/, '')}`;
+    
+    try {
+      phoneSchema.parse({ phone: phoneNumber });
+      
+      setLoading(true);
+      const { error } = await signInWithPhone(fullPhone);
+
+      if (error) {
+        if (error.message.includes("Phone provider is not enabled")) {
+          toast({
+            title: "Chưa kích hoạt SMS",
+            description: "Vui lòng liên hệ quản trị viên để kích hoạt đăng nhập bằng số điện thoại.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Lỗi gửi OTP",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "Đã gửi mã OTP",
+          description: `Mã xác thực đã được gửi đến ${fullPhone}`,
+        });
+        setShowOtpInput(true);
+        setOtpCountdown(60);
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Lỗi",
+          description: error.errors[0].message,
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otpCode.length !== 6) {
+      toast({
+        title: "Mã OTP không hợp lệ",
+        description: "Vui lòng nhập đủ 6 số",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const fullPhone = `${countryCode}${phoneNumber.replace(/^0/, '')}`;
+    
+    setLoading(true);
+    const { error } = await verifyOtp(fullPhone, otpCode);
+
+    if (error) {
+      toast({
+        title: "Mã OTP không đúng",
+        description: "Vui lòng kiểm tra lại mã xác thực",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Đăng nhập thành công!",
+        description: "Chào mừng bạn đến với Fun Chat WEB3",
+      });
+    }
+    setLoading(false);
+  };
+
+  const handleResendOtp = async () => {
+    if (otpCountdown > 0) return;
+    await handleSendOtp();
+  };
+
   const handleGoogleSignIn = async () => {
     setLoading(true);
     const { error } = await signInWithGoogle();
@@ -268,9 +374,91 @@ export default function Auth() {
             🎉 Email đã được xác nhận thành công!
           </h2>
           <p className="text-muted-foreground">
-            Đang chuyển bạn vào Fun Profile...
+            Đang chuyển bạn vào Fun Chat WEB3...
           </p>
           <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
+        </Card>
+      </div>
+    );
+  }
+
+  // OTP verification screen
+  if (showOtpInput) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
+        <Card className="w-full max-w-md p-8 space-y-6 border-2">
+          <div className="text-center space-y-4">
+            <img 
+              src={logo} 
+              alt="Fun Chat WEB3" 
+              className="w-20 h-20 mx-auto rounded-full shadow-lg"
+            />
+            <div className="space-y-2">
+              <h1 className="text-2xl font-bold">Nhập mã xác thực</h1>
+              <p className="text-muted-foreground text-sm">
+                Mã OTP đã được gửi đến {countryCode}{phoneNumber}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-center">
+            <InputOTP
+              maxLength={6}
+              value={otpCode}
+              onChange={(value) => setOtpCode(value)}
+            >
+              <InputOTPGroup>
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+                <InputOTPSlot index={5} />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
+
+          <Button 
+            onClick={handleVerifyOtp} 
+            className="w-full" 
+            disabled={loading || otpCode.length !== 6}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Đang xác thực...
+              </>
+            ) : (
+              "Xác nhận"
+            )}
+          </Button>
+
+          <div className="text-center space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Chưa nhận được mã?
+            </p>
+            <Button
+              variant="link"
+              onClick={handleResendOtp}
+              disabled={otpCountdown > 0 || loading}
+              className="text-primary"
+            >
+              {otpCountdown > 0 
+                ? `Gửi lại sau ${otpCountdown}s` 
+                : "Gửi lại mã OTP"}
+            </Button>
+          </div>
+
+          <Button 
+            variant="ghost" 
+            className="w-full"
+            onClick={() => {
+              setShowOtpInput(false);
+              setOtpCode("");
+            }}
+          >
+            ← Quay lại
+          </Button>
         </Card>
       </div>
     );
@@ -279,13 +467,46 @@ export default function Auth() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
       <Card className="w-full max-w-md p-8 space-y-6 border-2">
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Fun Profile
-          </h1>
-          <p className="text-muted-foreground">
-            Kết nối và chia sẻ với bạn bè
-          </p>
+        <div className="text-center space-y-4">
+          <img 
+            src={logo} 
+            alt="Fun Chat WEB3" 
+            className="w-20 h-20 mx-auto rounded-full shadow-lg"
+          />
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              Fun Chat WEB3
+            </h1>
+            <p className="text-muted-foreground">
+              Kết nối và chia sẻ với bạn bè
+            </p>
+          </div>
+        </div>
+
+        {/* Auth Method Toggle */}
+        <div className="flex rounded-lg bg-muted p-1">
+          <button
+            onClick={() => setAuthMethod("email")}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-colors ${
+              authMethod === "email" 
+                ? "bg-background shadow-sm text-foreground" 
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Mail className="h-4 w-4" />
+            Email
+          </button>
+          <button
+            onClick={() => setAuthMethod("phone")}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-colors ${
+              authMethod === "phone" 
+                ? "bg-background shadow-sm text-foreground" 
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Phone className="h-4 w-4" />
+            Số điện thoại
+          </button>
         </div>
 
         {/* Email Not Verified Banner */}
@@ -309,107 +530,154 @@ export default function Auth() {
           </Alert>
         )}
 
-        <Tabs defaultValue="signin" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="signin">Đăng nhập</TabsTrigger>
-            <TabsTrigger value="signup">Đăng ký</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="signin">
-            <form onSubmit={handleSignIn} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="signin-email">Email</Label>
+        {/* Phone Auth */}
+        {authMethod === "phone" && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone">Số điện thoại</Label>
+              <div className="flex gap-2">
+                <select
+                  value={countryCode}
+                  onChange={(e) => setCountryCode(e.target.value)}
+                  className="w-24 h-10 rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="+84">🇻🇳 +84</option>
+                  <option value="+1">🇺🇸 +1</option>
+                  <option value="+44">🇬🇧 +44</option>
+                  <option value="+65">🇸🇬 +65</option>
+                  <option value="+81">🇯🇵 +81</option>
+                  <option value="+82">🇰🇷 +82</option>
+                  <option value="+86">🇨🇳 +86</option>
+                </select>
                 <Input
-                  id="signin-email"
-                  type="email"
-                  placeholder="your@email.com"
-                  value={signInEmail}
-                  onChange={(e) => setSignInEmail(e.target.value)}
-                  required
+                  id="phone"
+                  type="tel"
+                  placeholder="912 345 678"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                  className="flex-1"
                   disabled={loading}
                 />
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="signin-password">Mật khẩu</Label>
-                <Input
-                  id="signin-password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={signInPassword}
-                  onChange={(e) => setSignInPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                />
-              </div>
+            <Button onClick={handleSendOtp} className="w-full" disabled={loading || !phoneNumber}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Đang gửi...
+                </>
+              ) : (
+                "Nhận mã OTP"
+              )}
+            </Button>
+          </div>
+        )}
 
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Đang đăng nhập...
-                  </>
-                ) : (
-                  "Đăng nhập"
-                )}
-              </Button>
-            </form>
-          </TabsContent>
+        {/* Email Auth */}
+        {authMethod === "email" && (
+          <Tabs defaultValue="signin" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="signin">Đăng nhập</TabsTrigger>
+              <TabsTrigger value="signup">Đăng ký</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="signup">
-            <form onSubmit={handleSignUp} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="signup-email">Email</Label>
-                <Input
-                  id="signup-email"
-                  type="email"
-                  placeholder="your@email.com"
-                  value={signUpEmail}
-                  onChange={(e) => setSignUpEmail(e.target.value)}
-                  required
-                  disabled={loading}
-                />
-              </div>
+            <TabsContent value="signin">
+              <form onSubmit={handleSignIn} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signin-email">Email</Label>
+                  <Input
+                    id="signin-email"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={signInEmail}
+                    onChange={(e) => setSignInEmail(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="signup-username">Username</Label>
-                <Input
-                  id="signup-username"
-                  type="text"
-                  placeholder="username"
-                  value={signUpUsername}
-                  onChange={(e) => setSignUpUsername(e.target.value)}
-                  required
-                  disabled={loading}
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signin-password">Mật khẩu</Label>
+                  <Input
+                    id="signin-password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={signInPassword}
+                    onChange={(e) => setSignInPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="signup-password">Mật khẩu</Label>
-                <Input
-                  id="signup-password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={signUpPassword}
-                  onChange={(e) => setSignUpPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                />
-              </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Đang đăng nhập...
+                    </>
+                  ) : (
+                    "Đăng nhập"
+                  )}
+                </Button>
+              </form>
+            </TabsContent>
 
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Đang đăng ký...
-                  </>
-                ) : (
-                  "Đăng ký"
-                )}
-              </Button>
-            </form>
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="signup">
+              <form onSubmit={handleSignUp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">Email</Label>
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={signUpEmail}
+                    onChange={(e) => setSignUpEmail(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-username">Username</Label>
+                  <Input
+                    id="signup-username"
+                    type="text"
+                    placeholder="username"
+                    value={signUpUsername}
+                    onChange={(e) => setSignUpUsername(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password">Mật khẩu</Label>
+                  <Input
+                    id="signup-password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={signUpPassword}
+                    onChange={(e) => setSignUpPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Đang đăng ký...
+                    </>
+                  ) : (
+                    "Đăng ký"
+                  )}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+        )}
 
         {/* Social Login Section */}
         <div className="relative">

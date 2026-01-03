@@ -202,7 +202,7 @@ export default function Chat() {
           console.log("Realtime UPDATE payload:", payload);
           const updatedMessage = payload.new as any;
           
-          // Update the message in state (for is_read status changes and edits)
+          // Update the message in state (for is_read, is_recalled status changes and edits)
           setMessages((prev) =>
             prev.map((m) =>
               m.id === updatedMessage.id
@@ -210,7 +210,9 @@ export default function Chat() {
                     ...m, 
                     is_read: updatedMessage.is_read,
                     content: updatedMessage.content,
-                    is_edited: updatedMessage.is_edited
+                    is_edited: updatedMessage.is_edited,
+                    is_recalled: updatedMessage.is_recalled,
+                    recalled_at: updatedMessage.recalled_at
                   }
                 : m
             )
@@ -315,6 +317,43 @@ export default function Chat() {
     toast({
       title: "Đã chỉnh sửa",
       description: "Tin nhắn đã được chỉnh sửa"
+    });
+  };
+
+  const handleRecallMessage = async (messageId: string) => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("messages")
+      .update({ 
+        is_recalled: true,
+        recalled_at: new Date().toISOString()
+      })
+      .eq("id", messageId)
+      .eq("sender_id", user.id);
+
+    if (error) {
+      console.error("Error recalling message:", error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể thu hồi tin nhắn. Vui lòng thử lại.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Update local state
+    setMessages(prev => 
+      prev.map(m => 
+        m.id === messageId 
+          ? { ...m, is_recalled: true, recalled_at: new Date().toISOString() }
+          : m
+      )
+    );
+
+    toast({
+      title: "Đã thu hồi",
+      description: "Tin nhắn đã được thu hồi cho tất cả mọi người"
     });
   };
 
@@ -633,6 +672,7 @@ export default function Chat() {
                   }
                 }}
                 onEditMessage={handleEditMessage}
+                onRecallMessage={handleRecallMessage}
               />
             )}
 

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { FileText, Download, FileArchive, FileSpreadsheet, FileCode, File, CheckCheck, Trash2, MoreVertical, Reply, Forward, Smile, Pin, CornerUpRight, Copy, Pencil } from "lucide-react";
+import { FileText, Download, FileArchive, FileSpreadsheet, FileCode, File, CheckCheck, Trash2, MoreVertical, Reply, Forward, Smile, Pin, CornerUpRight, Copy, Pencil, RotateCcw, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -60,6 +60,7 @@ interface MessageBubbleProps {
   isPinned?: boolean;
   onTogglePin?: (messageId: string) => void;
   onEdit?: (message: any) => void;
+  onRecall?: (messageId: string) => Promise<void>;
 }
 
 export default function MessageBubble({ 
@@ -74,10 +75,13 @@ export default function MessageBubble({
   onToggleReaction,
   isPinned = false,
   onTogglePin,
-  onEdit
+  onEdit,
+  onRecall
 }: MessageBubbleProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showRecallDialog, setShowRecallDialog] = useState(false);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
+  const [isRecallLoading, setIsRecallLoading] = useState(false);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const { toast } = useToast();
 
@@ -116,6 +120,17 @@ export default function MessageBubble({
     } finally {
       setIsDeleteLoading(false);
       setShowDeleteDialog(false);
+    }
+  };
+
+  const handleRecall = async () => {
+    if (!onRecall) return;
+    setIsRecallLoading(true);
+    try {
+      await onRecall(message.id);
+    } finally {
+      setIsRecallLoading(false);
+      setShowRecallDialog(false);
     }
   };
 
@@ -168,6 +183,47 @@ export default function MessageBubble({
 
   // Message status based on actual data
   const isRead = message.is_read === true;
+
+  // Check if message is recalled
+  if (message.is_recalled) {
+    return (
+      <div 
+        className={cn(
+          "flex mb-1",
+          isSent ? "justify-end" : "justify-start"
+        )}
+      >
+        <div className={cn(
+          "relative max-w-[75%] px-3 py-2 rounded-lg",
+          isSent
+            ? "bg-[hsl(var(--wa-outgoing))] rounded-tr-none"
+            : "bg-[hsl(var(--wa-incoming))] rounded-tl-none"
+        )}>
+          {/* WhatsApp-style bubble tail */}
+          <div
+            className={cn(
+              "absolute top-0 w-3 h-3",
+              isSent 
+                ? "right-[-6px] bg-[hsl(var(--wa-outgoing))]" 
+                : "left-[-6px] bg-[hsl(var(--wa-incoming))]",
+              isSent
+                ? "[clip-path:polygon(0_0,100%_0,0_100%)]"
+                : "[clip-path:polygon(100%_0,100%_100%,0_0)]"
+            )}
+          />
+          <div className="flex items-center gap-2 text-muted-foreground italic">
+            <Ban className="h-4 w-4" />
+            <span className="text-sm">Tin nhắn đã được thu hồi</span>
+          </div>
+          <div className="flex items-center justify-end mt-1">
+            <span className="text-[10px] text-muted-foreground">
+              {format(new Date(message.created_at), "HH:mm", { locale: vi })}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -451,21 +507,54 @@ export default function MessageBubble({
             </ContextMenuItem>
           )}
 
-          {/* Delete - only for sent messages */}
-          {isSent && onDelete && (
+          {/* Recall - only for sent messages */}
+          {isSent && onRecall && (
             <>
               <ContextMenuSeparator />
               <ContextMenuItem 
-                onClick={() => setShowDeleteDialog(true)}
-                className="text-destructive focus:text-destructive"
+                onClick={() => setShowRecallDialog(true)}
+                className="text-orange-500 focus:text-orange-500"
               >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Xóa tin nhắn
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Thu hồi tin nhắn
               </ContextMenuItem>
             </>
           )}
+
+          {/* Delete - only for sent messages */}
+          {isSent && onDelete && (
+            <ContextMenuItem 
+              onClick={() => setShowDeleteDialog(true)}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Xóa tin nhắn
+            </ContextMenuItem>
+          )}
         </ContextMenuContent>
       </ContextMenu>
+
+      {/* Recall confirmation dialog */}
+      <AlertDialog open={showRecallDialog} onOpenChange={setShowRecallDialog}>
+        <AlertDialogContent className="max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Thu hồi tin nhắn?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tin nhắn này sẽ được thu hồi cho tất cả mọi người trong cuộc trò chuyện.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isRecallLoading}>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRecall}
+              disabled={isRecallLoading}
+              className="bg-orange-500 text-white hover:bg-orange-600"
+            >
+              {isRecallLoading ? "Đang thu hồi..." : "Thu hồi"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -473,7 +562,7 @@ export default function MessageBubble({
           <AlertDialogHeader>
             <AlertDialogTitle>Xóa tin nhắn?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tin nhắn này sẽ bị xóa vĩnh viễn và không thể khôi phục.
+              Tin nhắn này sẽ bị xóa vĩnh viễn chỉ ở phía bạn.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

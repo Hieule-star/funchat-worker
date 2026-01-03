@@ -254,9 +254,11 @@ export type Database = {
           is_edited: boolean
           is_forwarded: boolean
           is_read: boolean
+          is_recalled: boolean
           media_type: string | null
           media_url: string | null
           message_type: string
+          recalled_at: string | null
           reply_to_id: string | null
           sender_id: string
           updated_at: string
@@ -269,9 +271,11 @@ export type Database = {
           is_edited?: boolean
           is_forwarded?: boolean
           is_read?: boolean
+          is_recalled?: boolean
           media_type?: string | null
           media_url?: string | null
           message_type?: string
+          recalled_at?: string | null
           reply_to_id?: string | null
           sender_id: string
           updated_at?: string
@@ -284,9 +288,11 @@ export type Database = {
           is_edited?: boolean
           is_forwarded?: boolean
           is_read?: boolean
+          is_recalled?: boolean
           media_type?: string | null
           media_url?: string | null
           message_type?: string
+          recalled_at?: string | null
           reply_to_id?: string | null
           sender_id?: string
           updated_at?: string

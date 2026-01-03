@@ -7,8 +7,8 @@ compatibility_date = "2024-01-01"
 node_compat = true
 
 [vars]
-SUPABASE_URL = "https://krajdsugcvwytpsqnbzs.supabase.co"
-SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyYWpkc3VnY3Z3eXRwc3FuYnpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0Mzg0NTEsImV4cCI6MjA4MDAxNDQ1MX0.f3J-9VZqm5xCiwnoqCmwQpFES-M7pZiWFhoYYQT8obU"
+SUPABASE_URL = "https://jtldrssvklgokbmjkjoc.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0bGRyc3N2a2xnb2tibWpram9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczOTA2MjYsImV4cCI6MjA4Mjk2NjYyNn0.VR43rkZoJRRajaX_AtfAPpUvmSlEXRgh7NbmC0QwDvg"
 CORS_ORIGIN = "https://funprofile.org,https://chat.funecosystem.org,https://funchat.richkid.cloud,http://localhost:5173,http://localhost:8080"
 
 # Secrets (set via: wrangler secret put AGORA_APP_ID)

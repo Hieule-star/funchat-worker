@@ -11,6 +11,7 @@ import OutgoingCallModal from "@/components/chat/OutgoingCallModal";
 import { ForwardMessageModal } from "@/components/chat/ForwardMessageModal";
 import PinnedMessagesPanel from "@/components/chat/PinnedMessagesPanel";
 import EditMessageModal from "@/components/chat/EditMessageModal";
+import WallpaperSelector from "@/components/chat/WallpaperSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -19,6 +20,7 @@ import { useSoundSettings } from "@/hooks/useSoundSettings";
 import { usePresence } from "@/hooks/usePresence";
 import { useMessageReactions } from "@/hooks/useMessageReactions";
 import { usePinnedMessages } from "@/hooks/usePinnedMessages";
+import { useWallpaper } from "@/hooks/useWallpaper";
 
 export default function Chat() {
   const { user, profile } = useAuth();
@@ -34,6 +36,7 @@ export default function Chat() {
   const [editMessage, setEditMessage] = useState<any>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [pinnedPanelOpen, setPinnedPanelOpen] = useState(false);
+  const [wallpaperSelectorOpen, setWallpaperSelectorOpen] = useState(false);
   const [videoCallOpen, setVideoCallOpen] = useState(false);
   const [deviceSelectionOpen, setDeviceSelectionOpen] = useState(false);
   const [callMode, setCallMode] = useState<'video' | 'audio'>('video');
@@ -76,6 +79,9 @@ export default function Chat() {
     togglePin,
     unpinMessage 
   } = usePinnedMessages(selectedConversation?.id);
+
+  // Wallpaper hook
+  const { wallpaper, updateWallpaper, getWallpaperStyle } = useWallpaper(selectedConversation?.id);
 
   // Use global call context instead of direct hook
   const {
@@ -644,6 +650,7 @@ export default function Chat() {
               typingUsers={typingUsers}
               pinnedCount={pinnedMessages.length}
               onOpenPinnedMessages={() => setPinnedPanelOpen(true)}
+              onOpenWallpaperSelector={() => setWallpaperSelectorOpen(true)}
             />
             
             {loading ? (
@@ -673,6 +680,7 @@ export default function Chat() {
                 }}
                 onEditMessage={handleEditMessage}
                 onRecallMessage={handleRecallMessage}
+                wallpaperStyle={getWallpaperStyle()}
               />
             )}
 
@@ -837,6 +845,19 @@ export default function Chat() {
         }}
         message={editMessage}
         onSave={handleSaveEdit}
+      />
+
+      <WallpaperSelector
+        open={wallpaperSelectorOpen}
+        onOpenChange={setWallpaperSelectorOpen}
+        currentWallpaper={wallpaper}
+        onSelect={(type, value) => {
+          updateWallpaper(type, value);
+          toast({
+            title: "Đã thay đổi hình nền",
+            description: "Hình nền chat đã được cập nhật"
+          });
+        }}
       />
     </div>
   );

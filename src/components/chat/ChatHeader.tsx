@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MoreVertical, Phone, Video, ArrowLeft, Search, Pin } from "lucide-react";
+import { MoreVertical, Phone, Video, ArrowLeft, Search, Pin, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -25,6 +25,7 @@ interface ChatHeaderProps {
   typingUsers?: TypingUser[];
   pinnedCount?: number;
   onOpenPinnedMessages?: () => void;
+  onOpenWallpaperSelector?: () => void;
 }
 
 export default function ChatHeader({ 
@@ -35,7 +36,8 @@ export default function ChatHeader({
   onlineUsers, 
   typingUsers,
   pinnedCount = 0,
-  onOpenPinnedMessages 
+  onOpenPinnedMessages,
+  onOpenWallpaperSelector
 }: ChatHeaderProps) {
   const otherUser = conversation.participants[0]?.profiles;
   const otherUserId = conversation.participants[0]?.user_id;
@@ -136,6 +138,10 @@ export default function ChatHeader({
             <DropdownMenuItem>
               <Search className="h-4 w-4 mr-2" />
               Tìm kiếm
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onOpenWallpaperSelector}>
+              <Image className="h-4 w-4 mr-2" />
+              Thay đổi hình nền
             </DropdownMenuItem>
             <DropdownMenuItem>Xem hồ sơ</DropdownMenuItem>
             <DropdownMenuItem>Tắt thông báo</DropdownMenuItem>

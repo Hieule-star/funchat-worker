@@ -72,6 +72,44 @@ export type Database = {
           },
         ]
       }
+      chat_wallpapers: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          wallpaper_type: string
+          wallpaper_value: string | null
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          wallpaper_type?: string
+          wallpaper_value?: string | null
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          wallpaper_type?: string
+          wallpaper_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_wallpapers_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_participants: {
         Row: {
           conversation_id: string

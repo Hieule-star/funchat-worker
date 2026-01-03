@@ -76,32 +76,44 @@ export function usePresence(userId: string | undefined) {
 
     setChannel(presenceChannel);
 
-    // Handle tab/window close
+    // Handle tab/window close - use untrack instead of sendBeacon to avoid CORS
     const handleBeforeUnload = () => {
-      // Use sendBeacon for reliable offline update
-      const url = `${import.meta.env.VITE_SUPABASE_URL || "https://krajdsugcvwytpsqnbzs.supabase.co"}/rest/v1/profiles?id=eq.${userId}`;
-      const data = JSON.stringify({ is_online: false, last_seen: new Date().toISOString() });
-      
-      navigator.sendBeacon(url, new Blob([data], { type: "application/json" }));
+      presenceChannel.untrack();
     };
 
+    // Debounce visibility changes to avoid excessive updates
+    let visibilityTimeout: ReturnType<typeof setTimeout> | null = null;
+    
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        updateOnlineStatus(false);
-      } else if (document.visibilityState === "visible") {
-        updateOnlineStatus(true);
+      if (visibilityTimeout) {
+        clearTimeout(visibilityTimeout);
       }
+      
+      visibilityTimeout = setTimeout(async () => {
+        if (document.visibilityState === "hidden") {
+          updateOnlineStatus(false);
+        } else if (document.visibilityState === "visible") {
+          updateOnlineStatus(true);
+          // Re-track presence when returning to tab
+          await presenceChannel.track({
+            user_id: userId,
+            online_at: new Date().toISOString(),
+          });
+        }
+      }, 1000);
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
+      if (visibilityTimeout) {
+        clearTimeout(visibilityTimeout);
+      }
       window.removeEventListener("beforeunload", handleBeforeUnload);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       
-      // Update offline status before unsubscribing
-      updateOnlineStatus(false);
+      presenceChannel.untrack();
       presenceChannel.unsubscribe();
     };
   }, [userId, updateOnlineStatus]);

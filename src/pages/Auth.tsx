@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
+import { PasswordStrengthIndicator } from "@/components/ui/password-strength-indicator";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -752,6 +753,7 @@ export default function Auth() {
                 required
                 disabled={loading}
               />
+              <PasswordStrengthIndicator password={signUpPassword} />
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
+import { PasswordStrengthIndicator } from "@/components/ui/password-strength-indicator";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -180,6 +181,7 @@ export default function ResetPassword() {
               disabled={loading}
               minLength={6}
             />
+            <PasswordStrengthIndicator password={password} />
           </div>
 
           <div className="space-y-2">

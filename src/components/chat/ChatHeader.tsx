@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MoreVertical, Phone, Video, ArrowLeft, Search } from "lucide-react";
+import { MoreVertical, Phone, Video, ArrowLeft, Search, Pin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -23,9 +23,20 @@ interface ChatHeaderProps {
   onBack?: () => void;
   onlineUsers?: Set<string>;
   typingUsers?: TypingUser[];
+  pinnedCount?: number;
+  onOpenPinnedMessages?: () => void;
 }
 
-export default function ChatHeader({ conversation, onVideoCall, onVoiceCall, onBack, onlineUsers, typingUsers }: ChatHeaderProps) {
+export default function ChatHeader({ 
+  conversation, 
+  onVideoCall, 
+  onVoiceCall, 
+  onBack, 
+  onlineUsers, 
+  typingUsers,
+  pinnedCount = 0,
+  onOpenPinnedMessages 
+}: ChatHeaderProps) {
   const otherUser = conversation.participants[0]?.profiles;
   const otherUserId = conversation.participants[0]?.user_id;
   const isOnline = otherUserId && onlineUsers ? onlineUsers.has(otherUserId) : false;
@@ -116,6 +127,12 @@ export default function ChatHeader({ conversation, onVideoCall, onVoiceCall, onB
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48 bg-card">
+            {pinnedCount > 0 && (
+              <DropdownMenuItem onClick={onOpenPinnedMessages}>
+                <Pin className="h-4 w-4 mr-2" />
+                Tin nhắn đã ghim ({pinnedCount})
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem>
               <Search className="h-4 w-4 mr-2" />
               Tìm kiếm

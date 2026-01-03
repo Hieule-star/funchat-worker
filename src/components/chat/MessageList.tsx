@@ -4,6 +4,8 @@ import TypingIndicator from "./TypingIndicator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { vi } from "date-fns/locale";
+import { Pin } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface TypingUser {
   userId: string;
@@ -26,6 +28,8 @@ interface MessageListProps {
   onForwardMessage?: (message: any) => void;
   reactions?: Record<string, ReactionData[]>;
   onToggleReaction?: (messageId: string, emoji: string) => void;
+  pinnedMessageIds?: Set<string>;
+  onTogglePin?: (messageId: string) => void;
 }
 
 export default function MessageList({ 
@@ -36,7 +40,9 @@ export default function MessageList({
   onReplyMessage,
   onForwardMessage,
   reactions = {},
-  onToggleReaction
+  onToggleReaction,
+  pinnedMessageIds = new Set(),
+  onTogglePin
 }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
@@ -110,7 +116,7 @@ export default function MessageList({
             const replyToMessage = getReplyToMessage(message.reply_to_id);
             
             return (
-              <div key={message.id}>
+              <div key={message.id} id={`message-${message.id}`}>
                 {showDateDivider && (
                   <div className="flex justify-center my-4">
                     <div className="bg-card/90 text-muted-foreground text-xs font-medium px-3 py-1.5 rounded-lg shadow-sm">
@@ -118,6 +124,18 @@ export default function MessageList({
                     </div>
                   </div>
                 )}
+                
+                {/* Pin indicator */}
+                {pinnedMessageIds.has(message.id) && (
+                  <div className={cn(
+                    "flex items-center gap-1 text-xs text-primary mb-1",
+                    message.sender_id === currentUserId ? "justify-end mr-1" : "justify-start ml-1"
+                  )}>
+                    <Pin className="h-3 w-3 fill-current" />
+                    <span>Đã ghim</span>
+                  </div>
+                )}
+                
                 <MessageBubble
                   message={message}
                   isSent={message.sender_id === currentUserId}
@@ -128,6 +146,8 @@ export default function MessageList({
                   onForward={onForwardMessage}
                   reactions={reactions[message.id] || []}
                   onToggleReaction={onToggleReaction}
+                  isPinned={pinnedMessageIds.has(message.id)}
+                  onTogglePin={onTogglePin}
                 />
               </div>
             );

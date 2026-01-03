@@ -2,7 +2,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { FileText, Download, FileArchive, FileSpreadsheet, FileCode, File, CheckCheck, Trash2, MoreVertical, Reply, Forward, Smile } from "lucide-react";
+import { FileText, Download, FileArchive, FileSpreadsheet, FileCode, File, CheckCheck, Trash2, MoreVertical, Reply, Forward, Smile, Pin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -48,6 +48,8 @@ interface MessageBubbleProps {
   onForward?: (message: any) => void;
   reactions?: ReactionData[];
   onToggleReaction?: (messageId: string, emoji: string) => void;
+  isPinned?: boolean;
+  onTogglePin?: (messageId: string) => void;
 }
 
 export default function MessageBubble({ 
@@ -59,11 +61,19 @@ export default function MessageBubble({
   replyToMessage,
   onForward,
   reactions = [],
-  onToggleReaction
+  onToggleReaction,
+  isPinned = false,
+  onTogglePin
 }: MessageBubbleProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
+
+  const handlePin = () => {
+    if (onTogglePin) {
+      onTogglePin(message.id);
+    }
+  };
 
   const handleDownload = () => {
     if (message.media_url) {
@@ -204,6 +214,12 @@ export default function MessageBubble({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-40">
+                  {onTogglePin && (
+                    <DropdownMenuItem onClick={handlePin}>
+                      <Pin className={cn("h-4 w-4 mr-2", isPinned && "fill-current")} />
+                      {isPinned ? "Bỏ ghim" : "Ghim tin nhắn"}
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem
                     onClick={() => setShowDeleteDialog(true)}
                     className="text-destructive focus:text-destructive"

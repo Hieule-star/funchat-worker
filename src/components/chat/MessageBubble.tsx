@@ -498,8 +498,8 @@ export default function MessageBubble({
             </ContextMenuItem>
           )}
 
-          {/* Edit - only for sent messages with text content */}
-          {isSent && message.content && onEdit && (
+          {/* Edit - only for sent messages with text content that are not recalled */}
+          {isSent && message.content && onEdit && !message.is_recalled && (
             <ContextMenuItem onClick={handleEdit}>
               <Pencil className="h-4 w-4 mr-2" />
               Chỉnh sửa

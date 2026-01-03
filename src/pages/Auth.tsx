@@ -43,6 +43,9 @@ export default function Auth() {
   // Auth method toggle
   const [authMethod, setAuthMethod] = useState<AuthMethod>("email");
   
+  // Auth view toggle (signin/signup)
+  const [authView, setAuthView] = useState<"signin" | "signup">("signin");
+  
   // Phone auth states
   const [phoneNumber, setPhoneNumber] = useState("");
   const [countryCode, setCountryCode] = useState("+84");
@@ -574,109 +577,123 @@ export default function Auth() {
           </div>
         )}
 
-        {/* Email Auth */}
-        {authMethod === "email" && (
-          <Tabs defaultValue="signin" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Đăng nhập</TabsTrigger>
-              <TabsTrigger value="signup">Đăng ký</TabsTrigger>
-            </TabsList>
+        {/* Email Auth - Sign In */}
+        {authMethod === "email" && authView === "signin" && (
+          <form onSubmit={handleSignIn} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="signin-email">Email</Label>
+              <Input
+                id="signin-email"
+                type="email"
+                placeholder="your@email.com"
+                value={signInEmail}
+                onChange={(e) => setSignInEmail(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
 
-            <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
-                  <Input
-                    id="signin-email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={signInEmail}
-                    onChange={(e) => setSignInEmail(e.target.value)}
-                    required
-                    disabled={loading}
-                  />
-                </div>
+            <div className="space-y-2">
+              <Label htmlFor="signin-password">Mật khẩu</Label>
+              <Input
+                id="signin-password"
+                type="password"
+                placeholder="••••••••"
+                value={signInPassword}
+                onChange={(e) => setSignInPassword(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Mật khẩu</Label>
-                  <Input
-                    id="signin-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={signInPassword}
-                    onChange={(e) => setSignInPassword(e.target.value)}
-                    required
-                    disabled={loading}
-                  />
-                </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Đang đăng nhập...
+                </>
+              ) : (
+                "Đăng nhập"
+              )}
+            </Button>
 
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Đang đăng nhập...
-                    </>
-                  ) : (
-                    "Đăng nhập"
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
+            <p className="text-center text-sm text-muted-foreground">
+              Nếu chưa có tài khoản, vui lòng{" "}
+              <button
+                type="button"
+                onClick={() => setAuthView("signup")}
+                className="text-primary font-medium hover:underline"
+              >
+                Đăng ký
+              </button>
+            </p>
+          </form>
+        )}
 
-            <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={signUpEmail}
-                    onChange={(e) => setSignUpEmail(e.target.value)}
-                    required
-                    disabled={loading}
-                  />
-                </div>
+        {/* Email Auth - Sign Up */}
+        {authMethod === "email" && authView === "signup" && (
+          <form onSubmit={handleSignUp} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="signup-email">Email</Label>
+              <Input
+                id="signup-email"
+                type="email"
+                placeholder="your@email.com"
+                value={signUpEmail}
+                onChange={(e) => setSignUpEmail(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-username">Username</Label>
-                  <Input
-                    id="signup-username"
-                    type="text"
-                    placeholder="username"
-                    value={signUpUsername}
-                    onChange={(e) => setSignUpUsername(e.target.value)}
-                    required
-                    disabled={loading}
-                  />
-                </div>
+            <div className="space-y-2">
+              <Label htmlFor="signup-username">Username</Label>
+              <Input
+                id="signup-username"
+                type="text"
+                placeholder="username"
+                value={signUpUsername}
+                onChange={(e) => setSignUpUsername(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Mật khẩu</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={signUpPassword}
-                    onChange={(e) => setSignUpPassword(e.target.value)}
-                    required
-                    disabled={loading}
-                  />
-                </div>
+            <div className="space-y-2">
+              <Label htmlFor="signup-password">Mật khẩu</Label>
+              <Input
+                id="signup-password"
+                type="password"
+                placeholder="••••••••"
+                value={signUpPassword}
+                onChange={(e) => setSignUpPassword(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
 
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Đang đăng ký...
-                    </>
-                  ) : (
-                    "Đăng ký"
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Đang đăng ký...
+                </>
+              ) : (
+                "Đăng ký"
+              )}
+            </Button>
+
+            <p className="text-center text-sm text-muted-foreground">
+              Đã có tài khoản?{" "}
+              <button
+                type="button"
+                onClick={() => setAuthView("signin")}
+                className="text-primary font-medium hover:underline"
+              >
+                Đăng nhập
+              </button>
+            </p>
+          </form>
         )}
 
         {/* Social Login Section */}

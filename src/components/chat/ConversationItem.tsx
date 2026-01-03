@@ -18,9 +18,9 @@ export default function ConversationItem({
   const otherUser = conversation.participants[0]?.profiles;
   const lastMessage = conversation.lastMessage;
   
-  // Mock online status and unread count
-  const isOnline = Math.random() > 0.5;
-  const unreadCount = Math.floor(Math.random() * 5);
+  // Use real unread count from props, mock online status for now
+  const isOnline = otherUser?.is_online || false;
+  const unreadCount = conversation.unreadCount || 0;
 
   const getMessagePreview = () => {
     if (!lastMessage) return "Bắt đầu cuộc trò chuyện";

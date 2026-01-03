@@ -83,12 +83,18 @@ export default function Chat() {
       setLoading(false);
 
       // Mark messages as read after fetching
-      await supabase
+      const { error: updateError, count } = await supabase
         .from("messages")
         .update({ is_read: true })
         .eq("conversation_id", selectedConversation.id)
         .neq("sender_id", user.id)
         .eq("is_read", false);
+
+      if (updateError) {
+        console.error("Error marking messages as read:", updateError);
+      } else if (count && count > 0) {
+        console.log(`Marked ${count} messages as read`);
+      }
     };
 
     fetchMessages();

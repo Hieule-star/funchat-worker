@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import MessageBubble from "./MessageBubble";
 import TypingIndicator from "./TypingIndicator";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -15,10 +15,17 @@ interface MessageListProps {
   messages: any[];
   currentUserId?: string;
   typingUsers?: TypingUser[];
+  onDeleteMessage?: (messageId: string) => Promise<void>;
 }
 
-export default function MessageList({ messages, currentUserId, typingUsers = [] }: MessageListProps) {
+export default function MessageList({ 
+  messages, 
+  currentUserId, 
+  typingUsers = [],
+  onDeleteMessage 
+}: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -41,6 +48,15 @@ export default function MessageList({ messages, currentUserId, typingUsers = [] 
     const currentDate = new Date(currentMessage.created_at);
     const previousDate = new Date(previousMessage.created_at);
     return !isSameDay(currentDate, previousDate);
+  };
+
+  const handleDelete = async (messageId: string) => {
+    if (!onDeleteMessage) return;
+    setDeletingMessageId(messageId);
+    // Wait for animation to start
+    await new Promise(resolve => setTimeout(resolve, 50));
+    await onDeleteMessage(messageId);
+    setDeletingMessageId(null);
   };
 
   return (
@@ -71,6 +87,8 @@ export default function MessageList({ messages, currentUserId, typingUsers = [] 
                 <MessageBubble
                   message={message}
                   isSent={message.sender_id === currentUserId}
+                  onDelete={onDeleteMessage ? handleDelete : undefined}
+                  isDeleting={deletingMessageId === message.id}
                 />
               </div>
             );

@@ -32,7 +32,7 @@ const phoneSchema = z.object({
 type AuthMethod = "email" | "phone";
 
 export default function Auth() {
-  const { user, signUp, signIn, signInWithPhone, verifyOtp, signInWithGoogle, signInWithFacebook, resendEmailVerification } = useAuth();
+  const { user, signUp, signIn, signInWithPhone, verifyOtp, signInWithGoogle, signInWithFacebook, resendEmailVerification, resetPassword } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -44,7 +44,10 @@ export default function Auth() {
   const [authMethod, setAuthMethod] = useState<AuthMethod>("email");
   
   // Auth view toggle (signin/signup)
-  const [authView, setAuthView] = useState<"signin" | "signup">("signin");
+  const [authView, setAuthView] = useState<"signin" | "signup" | "forgot-password">("signin");
+  
+  // Forgot password state
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   
   // Phone auth states
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -594,7 +597,16 @@ export default function Auth() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="signin-password">Mật khẩu</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="signin-password">Mật khẩu</Label>
+                <button
+                  type="button"
+                  onClick={() => setAuthView("forgot-password")}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Quên mật khẩu?
+                </button>
+              </div>
               <Input
                 id="signin-password"
                 type="password"
@@ -625,6 +637,77 @@ export default function Auth() {
                 className="text-primary font-medium hover:underline"
               >
                 Đăng ký
+              </button>
+            </p>
+          </form>
+        )}
+
+        {/* Forgot Password */}
+        {authMethod === "email" && authView === "forgot-password" && (
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!forgotPasswordEmail) return;
+              
+              setLoading(true);
+              const { error } = await resetPassword(forgotPasswordEmail);
+              
+              if (error) {
+                toast({
+                  title: "Lỗi",
+                  description: error.message,
+                  variant: "destructive",
+                });
+              } else {
+                toast({
+                  title: "Đã gửi email",
+                  description: "Vui lòng kiểm tra hộp thư để đặt lại mật khẩu.",
+                });
+                setForgotPasswordEmail("");
+                setAuthView("signin");
+              }
+              setLoading(false);
+            }}
+            className="space-y-4"
+          >
+            <div className="text-center space-y-2 mb-4">
+              <h2 className="text-lg font-semibold">Quên mật khẩu?</h2>
+              <p className="text-sm text-muted-foreground">
+                Nhập email của bạn để nhận link đặt lại mật khẩu
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="forgot-email">Email</Label>
+              <Input
+                id="forgot-email"
+                type="email"
+                placeholder="your@email.com"
+                value={forgotPasswordEmail}
+                onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
+
+            <Button type="submit" className="w-full" disabled={loading || !forgotPasswordEmail}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Đang gửi...
+                </>
+              ) : (
+                "Gửi email đặt lại mật khẩu"
+              )}
+            </Button>
+
+            <p className="text-center text-sm text-muted-foreground">
+              <button
+                type="button"
+                onClick={() => setAuthView("signin")}
+                className="text-primary font-medium hover:underline"
+              >
+                ← Quay lại đăng nhập
               </button>
             </p>
           </form>

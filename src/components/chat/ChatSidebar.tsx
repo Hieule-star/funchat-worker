@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import ConversationItem from "./ConversationItem";
@@ -29,63 +29,67 @@ export default function ChatSidebar({
   const [showSearch, setShowSearch] = useState(false);
   const [showNewConversationModal, setShowNewConversationModal] = useState(false);
 
+  // Extracted fetchConversations to be callable from handleConversationCreated
+  const fetchConversations = useCallback(async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("conversation_participants")
+      .select(`
+        conversation_id,
+        conversations (
+          id,
+          created_at,
+          updated_at
+        )
+      `)
+      .eq("user_id", user.id);
+
+    if (!error && data) {
+      const conversationsWithDetails = await Promise.all(
+        data.map(async (item: any) => {
+          const { data: participants } = await supabase
+            .from("conversation_participants")
+            .select(`
+              user_id,
+              profiles (id, username, avatar_url)
+            `)
+            .eq("conversation_id", item.conversations.id)
+            .neq("user_id", user.id);
+
+          const { data: lastMessage } = await supabase
+            .from("messages")
+            .select("content, created_at, media_type")
+            .eq("conversation_id", item.conversations.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single();
+
+          return {
+            ...item.conversations,
+            participants: participants || [],
+            lastMessage,
+          };
+        })
+      );
+
+      // Sort by last message time
+      conversationsWithDetails.sort((a, b) => {
+        const aTime = a.lastMessage?.created_at || a.created_at;
+        const bTime = b.lastMessage?.created_at || b.created_at;
+        return new Date(bTime).getTime() - new Date(aTime).getTime();
+      });
+
+      setConversations(conversationsWithDetails);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (!user) return;
 
-    const fetchConversations = async () => {
-      const { data, error } = await supabase
-        .from("conversation_participants")
-        .select(`
-          conversation_id,
-          conversations (
-            id,
-            created_at,
-            updated_at
-          )
-        `)
-        .eq("user_id", user.id);
-
-      if (!error && data) {
-        const conversationsWithDetails = await Promise.all(
-          data.map(async (item: any) => {
-            const { data: participants } = await supabase
-              .from("conversation_participants")
-              .select(`
-                user_id,
-                profiles (id, username, avatar_url)
-              `)
-              .eq("conversation_id", item.conversations.id)
-              .neq("user_id", user.id);
-
-            const { data: lastMessage } = await supabase
-              .from("messages")
-              .select("content, created_at, media_type")
-              .eq("conversation_id", item.conversations.id)
-              .order("created_at", { ascending: false })
-              .limit(1)
-              .single();
-
-            return {
-              ...item.conversations,
-              participants: participants || [],
-              lastMessage,
-            };
-          })
-        );
-
-        // Sort by last message time
-        conversationsWithDetails.sort((a, b) => {
-          const aTime = a.lastMessage?.created_at || a.created_at;
-          const bTime = b.lastMessage?.created_at || b.created_at;
-          return new Date(bTime).getTime() - new Date(aTime).getTime();
-        });
-
-        setConversations(conversationsWithDetails);
-      }
-    };
-
     fetchConversations();
 
+    // Subscribe to both conversations and conversation_participants changes
     const channel = supabase
       .channel("conversations-updates")
       .on(
@@ -95,18 +99,30 @@ export default function ChatSidebar({
           schema: "public",
           table: "conversations",
         },
-        () => {
-          fetchConversations();
-        }
+        () => fetchConversations()
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "conversation_participants",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => fetchConversations()
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, fetchConversations]);
 
   const handleConversationCreated = async (conversationId: string) => {
+    // Refetch all conversations to update the sidebar
+    await fetchConversations();
+
+    // Fetch the newly created conversation details
     const { data: conversation } = await supabase
       .from("conversations")
       .select("*")
@@ -123,6 +139,7 @@ export default function ChatSidebar({
         .eq("conversation_id", conversationId)
         .neq("user_id", user?.id);
 
+      // Select the new conversation
       onSelectConversation({
         ...conversation,
         participants: participants || [],

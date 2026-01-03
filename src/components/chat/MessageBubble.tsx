@@ -177,6 +177,13 @@ export default function MessageBubble({
     return "Tin nhắn";
   };
 
+  // Check if message can be recalled (within 5 minutes)
+  const RECALL_TIME_LIMIT_MS = 5 * 60 * 1000; // 5 minutes
+  const messageAge = Date.now() - new Date(message.created_at).getTime();
+  const canRecall = isSent && onRecall && messageAge <= RECALL_TIME_LIMIT_MS && !message.is_recalled;
+  const remainingRecallTime = Math.max(0, RECALL_TIME_LIMIT_MS - messageAge);
+  const remainingMinutes = Math.ceil(remainingRecallTime / 60000);
+
   const fileName = message.media_url ? getFileName(message.media_url) : 'File';
   const fileExtension = message.media_url ? message.media_url.split('.').pop()?.toUpperCase() || '' : '';
   const FileIcon = message.media_url ? getFileIcon(message.media_url) : File;
@@ -507,8 +514,8 @@ export default function MessageBubble({
             </ContextMenuItem>
           )}
 
-          {/* Recall - only for sent messages */}
-          {isSent && onRecall && (
+          {/* Recall - only for sent messages within time limit */}
+          {canRecall && (
             <>
               <ContextMenuSeparator />
               <ContextMenuItem 
@@ -516,7 +523,7 @@ export default function MessageBubble({
                 className="text-orange-500 focus:text-orange-500"
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
-                Thu hồi tin nhắn
+                Thu hồi ({remainingMinutes} phút)
               </ContextMenuItem>
             </>
           )}

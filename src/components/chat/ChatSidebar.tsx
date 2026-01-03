@@ -54,7 +54,7 @@ export default function ChatSidebar({
             .from("conversation_participants")
             .select(`
               user_id,
-              profiles (id, username, avatar_url)
+              profiles (id, username, avatar_url, last_seen, is_online)
             `)
             .eq("conversation_id", item.conversations.id)
             .neq("user_id", user.id);

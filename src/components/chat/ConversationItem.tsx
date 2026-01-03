@@ -25,6 +25,14 @@ export default function ConversationItem({
   const isOnline = otherUserId && onlineUsers ? onlineUsers.has(otherUserId) : false;
   const unreadCount = conversation.unreadCount || 0;
 
+  const formatLastSeen = () => {
+    if (!otherUser?.last_seen) return "";
+    return formatDistanceToNow(new Date(otherUser.last_seen), { 
+      addSuffix: true, 
+      locale: vi 
+    });
+  };
+
   const getMessagePreview = () => {
     if (!lastMessage) return "Bắt đầu cuộc trò chuyện";
     
@@ -99,8 +107,12 @@ export default function ConversationItem({
             {otherUser?.username?.[0]?.toUpperCase() || "U"}
           </AvatarFallback>
         </Avatar>
-        {isOnline && (
+        {isOnline ? (
           <span className="absolute bottom-0 right-0 h-3.5 w-3.5 bg-[hsl(var(--wa-light-green))] border-2 border-card rounded-full" />
+        ) : otherUser?.last_seen && (
+          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] text-muted-foreground whitespace-nowrap bg-card px-1 rounded">
+            {formatLastSeen()}
+          </span>
         )}
       </div>
 

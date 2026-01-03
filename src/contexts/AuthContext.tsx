@@ -23,6 +23,7 @@ interface AuthContextType {
   signInWithFacebook: () => Promise<{ error: any }>;
   signInWithTelegram: () => Promise<{ error: any }>;
   resendEmailVerification: (email: string) => Promise<{ error: any }>;
+  resetPassword: (email: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
 
@@ -192,6 +193,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error };
   };
 
+  const resetPassword = async (email: string) => {
+    const redirectUrl = getRedirectUrl();
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: redirectUrl,
+    });
+    return { error };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setProfile(null);
@@ -212,6 +221,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signInWithFacebook,
         signInWithTelegram,
         resendEmailVerification,
+        resetPassword,
         signOut,
       }}
     >

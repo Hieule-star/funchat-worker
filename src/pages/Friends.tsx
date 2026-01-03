@@ -213,7 +213,7 @@ export default function Friends() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-2xl">
                 <Users className="h-6 w-6 text-primary" />
-                Bạn bè
+                Danh bạ
               </CardTitle>
             </CardHeader>
           </Card>

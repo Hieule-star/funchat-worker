@@ -141,8 +141,7 @@ export default function NewConversationModal({
       const { data: conversationId, error } = await supabase.rpc(
         'create_conversation_with_participants',
         {
-          current_user_id: user.id,
-          friend_id: targetUserId
+          target_user_id: targetUserId
         }
       );
 

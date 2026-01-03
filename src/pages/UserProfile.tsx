@@ -81,8 +81,7 @@ export default function UserProfile() {
       const { data: conversationId, error } = await supabase.rpc(
         'create_conversation_with_participants',
         {
-          current_user_id: user.id,
-          friend_id: userId
+          target_user_id: userId
         }
       );
 

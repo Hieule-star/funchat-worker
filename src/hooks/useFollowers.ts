@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -7,59 +6,22 @@ interface UseFollowersOptions {
   userId: string;
 }
 
+// Note: followers table doesn't exist yet - returning stub data
 export function useFollowers({ userId }: UseFollowersOptions) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [followersCount, setFollowersCount] = useState(0);
-  const [followingCount, setFollowingCount] = useState(0);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [followersCount] = useState(0);
+  const [followingCount] = useState(0);
+  const [isFollowing] = useState(false);
+  const [loading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
   const fetchFollowData = useCallback(async () => {
-    if (!userId) return;
-
-    try {
-      setLoading(true);
-
-      // Count followers (people following this user)
-      const { count: followers } = await supabase
-        .from("followers")
-        .select("*", { count: "exact", head: true })
-        .eq("following_id", userId);
-
-      // Count following (people this user follows)
-      const { count: following } = await supabase
-        .from("followers")
-        .select("*", { count: "exact", head: true })
-        .eq("follower_id", userId);
-
-      setFollowersCount(followers || 0);
-      setFollowingCount(following || 0);
-
-      // Check if current user is following this user
-      if (user && user.id !== userId) {
-        const { data: followData } = await supabase
-          .from("followers")
-          .select("id")
-          .eq("follower_id", user.id)
-          .eq("following_id", userId)
-          .single();
-
-        setIsFollowing(!!followData);
-      }
-    } catch (error) {
-      console.error("Error fetching follow data:", error);
-    } finally {
-      setLoading(false);
-    }
+    // followers table doesn't exist yet
+    return;
   }, [userId, user]);
 
-  useEffect(() => {
-    fetchFollowData();
-  }, [fetchFollowData]);
-
-  const handleFollow = async () => {
+  const toggleFollow = async () => {
     if (!user) {
       toast({
         title: "Thông báo",
@@ -73,74 +35,13 @@ export function useFollowers({ userId }: UseFollowersOptions) {
       return;
     }
 
-    try {
-      setActionLoading(true);
-
-      const { error } = await supabase.from("followers").insert({
-        follower_id: user.id,
-        following_id: userId,
-      });
-
-      if (error) throw error;
-
-      setIsFollowing(true);
-      setFollowersCount((prev) => prev + 1);
-
-      toast({
-        title: "Thành công",
-        description: "Đã theo dõi người dùng",
-      });
-    } catch (error) {
-      console.error("Error following user:", error);
-      toast({
-        title: "Lỗi",
-        description: "Không thể theo dõi người dùng",
-        variant: "destructive",
-      });
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleUnfollow = async () => {
-    if (!user || user.id === userId) return;
-
-    try {
-      setActionLoading(true);
-
-      const { error } = await supabase
-        .from("followers")
-        .delete()
-        .eq("follower_id", user.id)
-        .eq("following_id", userId);
-
-      if (error) throw error;
-
-      setIsFollowing(false);
-      setFollowersCount((prev) => Math.max(0, prev - 1));
-
-      toast({
-        title: "Thành công",
-        description: "Đã bỏ theo dõi người dùng",
-      });
-    } catch (error) {
-      console.error("Error unfollowing user:", error);
-      toast({
-        title: "Lỗi",
-        description: "Không thể bỏ theo dõi",
-        variant: "destructive",
-      });
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const toggleFollow = () => {
-    if (isFollowing) {
-      handleUnfollow();
-    } else {
-      handleFollow();
-    }
+    setActionLoading(true);
+    // followers table doesn't exist yet - show placeholder message
+    toast({
+      title: "Thông báo",
+      description: "Tính năng theo dõi đang được phát triển",
+    });
+    setActionLoading(false);
   };
 
   return {

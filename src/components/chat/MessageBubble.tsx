@@ -2,7 +2,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { FileText, Download, FileArchive, FileSpreadsheet, FileCode, File, CheckCheck, Trash2, MoreVertical, Reply, Forward } from "lucide-react";
+import { FileText, Download, FileArchive, FileSpreadsheet, FileCode, File, CheckCheck, Trash2, MoreVertical, Reply, Forward, Smile } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -20,6 +20,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import ReactionPicker from "./ReactionPicker";
+import MessageReactions from "./MessageReactions";
 
 interface ReplyToMessage {
   id: string;
@@ -30,6 +32,12 @@ interface ReplyToMessage {
   media_type?: string | null;
 }
 
+interface ReactionData {
+  reaction: string;
+  count: number;
+  hasReacted: boolean;
+}
+
 interface MessageBubbleProps {
   message: any;
   isSent: boolean;
@@ -38,6 +46,8 @@ interface MessageBubbleProps {
   onReply?: (message: any) => void;
   replyToMessage?: ReplyToMessage | null;
   onForward?: (message: any) => void;
+  reactions?: ReactionData[];
+  onToggleReaction?: (messageId: string, emoji: string) => void;
 }
 
 export default function MessageBubble({ 
@@ -47,10 +57,13 @@ export default function MessageBubble({
   isDeleting,
   onReply,
   replyToMessage,
-  onForward
+  onForward,
+  reactions = [],
+  onToggleReaction
 }: MessageBubbleProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
 
   const handleDownload = () => {
     if (message.media_url) {
@@ -79,6 +92,13 @@ export default function MessageBubble({
     if (onForward) {
       onForward(message);
     }
+  };
+
+  const handleReact = (emoji: string) => {
+    if (onToggleReaction) {
+      onToggleReaction(message.id, emoji);
+    }
+    setShowReactionPicker(false);
   };
 
   const getFileName = (url: string) => {
@@ -122,11 +142,31 @@ export default function MessageBubble({
         )}
       >
         <div className={cn("relative max-w-[75%] group")}>
+          {/* Reaction picker */}
+          <ReactionPicker
+            isOpen={showReactionPicker}
+            onClose={() => setShowReactionPicker(false)}
+            onReact={handleReact}
+            isSent={isSent}
+          />
+
           {/* Action menu */}
           <div className={cn(
             "absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1",
-            isSent ? "-left-16" : "-right-16"
+            isSent ? "-left-24" : "-right-24"
           )}>
+            {/* Reaction button */}
+            {onToggleReaction && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 rounded-full bg-background/80 hover:bg-background shadow-sm"
+                onClick={() => setShowReactionPicker(true)}
+              >
+                <Smile className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            )}
+
             {/* Forward button */}
             {onForward && (
               <Button
@@ -297,6 +337,13 @@ export default function MessageBubble({
               )}
             </div>
           </div>
+
+          {/* Reactions display */}
+          <MessageReactions
+            reactions={reactions}
+            onToggleReaction={(emoji) => onToggleReaction?.(message.id, emoji)}
+            isSent={isSent}
+          />
         </div>
       </div>
 

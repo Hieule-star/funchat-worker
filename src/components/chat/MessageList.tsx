@@ -11,6 +11,12 @@ interface TypingUser {
   avatarUrl?: string;
 }
 
+interface ReactionData {
+  reaction: string;
+  count: number;
+  hasReacted: boolean;
+}
+
 interface MessageListProps {
   messages: any[];
   currentUserId?: string;
@@ -18,6 +24,8 @@ interface MessageListProps {
   onDeleteMessage?: (messageId: string) => Promise<void>;
   onReplyMessage?: (message: any) => void;
   onForwardMessage?: (message: any) => void;
+  reactions?: Record<string, ReactionData[]>;
+  onToggleReaction?: (messageId: string, emoji: string) => void;
 }
 
 export default function MessageList({ 
@@ -26,7 +34,9 @@ export default function MessageList({
   typingUsers = [],
   onDeleteMessage,
   onReplyMessage,
-  onForwardMessage
+  onForwardMessage,
+  reactions = {},
+  onToggleReaction
 }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
@@ -116,6 +126,8 @@ export default function MessageList({
                   onReply={onReplyMessage}
                   replyToMessage={replyToMessage}
                   onForward={onForwardMessage}
+                  reactions={reactions[message.id] || []}
+                  onToggleReaction={onToggleReaction}
                 />
               </div>
             );

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { FileText, Download, FileArchive, FileSpreadsheet, FileCode, File, Check, CheckCheck, Trash2, MoreVertical } from "lucide-react";
+import { FileText, Download, FileArchive, FileSpreadsheet, FileCode, File, CheckCheck, Trash2, MoreVertical, Reply } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -21,14 +21,32 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+interface ReplyToMessage {
+  id: string;
+  content: string | null;
+  sender: {
+    username: string;
+  } | null;
+  media_type?: string | null;
+}
+
 interface MessageBubbleProps {
   message: any;
   isSent: boolean;
   onDelete?: (messageId: string) => Promise<void>;
   isDeleting?: boolean;
+  onReply?: (message: any) => void;
+  replyToMessage?: ReplyToMessage | null;
 }
 
-export default function MessageBubble({ message, isSent, onDelete, isDeleting }: MessageBubbleProps) {
+export default function MessageBubble({ 
+  message, 
+  isSent, 
+  onDelete, 
+  isDeleting,
+  onReply,
+  replyToMessage
+}: MessageBubbleProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
 
@@ -49,6 +67,12 @@ export default function MessageBubble({ message, isSent, onDelete, isDeleting }:
     }
   };
 
+  const handleReply = () => {
+    if (onReply) {
+      onReply(message);
+    }
+  };
+
   const getFileName = (url: string) => {
     const parts = url.split('/');
     const fullName = parts[parts.length - 1];
@@ -63,6 +87,14 @@ export default function MessageBubble({ message, isSent, onDelete, isDeleting }:
     if (['js', 'ts', 'py', 'java', 'cpp', 'exe', 'dll'].includes(ext)) return FileCode;
     if (['doc', 'docx', 'txt', 'pdf'].includes(ext)) return FileText;
     return File;
+  };
+
+  const getReplyPreviewText = (reply: ReplyToMessage) => {
+    if (reply.content) return reply.content;
+    if (reply.media_type === "image") return "📷 Hình ảnh";
+    if (reply.media_type === "video") return "🎥 Video";
+    if (reply.media_type === "document") return "📄 Tài liệu";
+    return "Tin nhắn";
   };
 
   const fileName = message.media_url ? getFileName(message.media_url) : 'File';
@@ -82,9 +114,25 @@ export default function MessageBubble({ message, isSent, onDelete, isDeleting }:
         )}
       >
         <div className={cn("relative max-w-[75%] group")}>
-          {/* Delete menu for sent messages */}
-          {isSent && onDelete && (
-            <div className="absolute -left-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          {/* Action menu */}
+          <div className={cn(
+            "absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1",
+            isSent ? "-left-16" : "-right-16"
+          )}>
+            {/* Reply button */}
+            {onReply && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 rounded-full bg-background/80 hover:bg-background shadow-sm"
+                onClick={handleReply}
+              >
+                <Reply className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            )}
+            
+            {/* Delete menu for sent messages */}
+            {isSent && onDelete && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -105,8 +153,8 @@ export default function MessageBubble({ message, isSent, onDelete, isDeleting }:
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* WhatsApp-style bubble tail */}
           <div
@@ -129,8 +177,25 @@ export default function MessageBubble({ message, isSent, onDelete, isDeleting }:
                 : "bg-[hsl(var(--wa-incoming))] text-foreground rounded-tl-none"
             )}
           >
+            {/* Reply preview */}
+            {replyToMessage && (
+              <div className={cn(
+                "mx-2 mt-2 p-2 rounded-md border-l-2 cursor-pointer",
+                isSent 
+                  ? "bg-black/5 border-primary/50" 
+                  : "bg-black/5 border-primary"
+              )}>
+                <p className="text-xs font-semibold text-primary truncate">
+                  {replyToMessage.sender?.username || "Người dùng"}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {getReplyPreviewText(replyToMessage)}
+                </p>
+              </div>
+            )}
+
             {/* Sender name for group chats (received messages only) */}
-            {!isSent && message.sender?.username && (
+            {!isSent && message.sender?.username && !replyToMessage && (
               <p className="px-3 pt-2 text-xs font-semibold text-primary">
                 {message.sender.username}
               </p>
@@ -207,11 +272,7 @@ export default function MessageBubble({ message, isSent, onDelete, isDeleting }:
                     ? "text-white" 
                     : isRead ? "text-[hsl(var(--wa-double-tick))]" : "text-muted-foreground"
                 )}>
-                  {isRead ? (
-                    <CheckCheck className="h-3.5 w-3.5" />
-                  ) : (
-                    <CheckCheck className="h-3.5 w-3.5" />
-                  )}
+                  <CheckCheck className="h-3.5 w-3.5" />
                 </span>
               )}
             </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Send, Smile, Paperclip, Mic, FileText, Camera, Image, File } from "lucide-react";
+import { Send, Smile, Paperclip, Mic, FileText, Camera, Image, File, X, Reply } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -10,13 +10,25 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
-interface ChatInputProps {
-  onSendMessage: (content: string, mediaUrl?: string, mediaType?: string) => void;
-  onTyping?: (isTyping: boolean) => void;
+interface ReplyMessage {
+  id: string;
+  content: string | null;
+  sender: {
+    username: string;
+  } | null;
+  media_type?: string | null;
 }
 
-export default function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
+interface ChatInputProps {
+  onSendMessage: (content: string, mediaUrl?: string, mediaType?: string, replyToId?: string) => void;
+  onTyping?: (isTyping: boolean) => void;
+  replyTo?: ReplyMessage | null;
+  onCancelReply?: () => void;
+}
+
+export default function ChatInput({ onSendMessage, onTyping, replyTo, onCancelReply }: ChatInputProps) {
   const { toast } = useToast();
   const [message, setMessage] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -34,6 +46,13 @@ export default function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
       }
     };
   }, []);
+
+  // Focus input when replying
+  useEffect(() => {
+    if (replyTo && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [replyTo]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -66,6 +85,10 @@ export default function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
+    }
+    // Cancel reply with Escape
+    if (e.key === 'Escape' && replyTo && onCancelReply) {
+      onCancelReply();
     }
   };
 
@@ -112,7 +135,7 @@ export default function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
     
     const result = await uploadFile(selectedFile);
     if (result) {
-      onSendMessage(message.trim(), result.url, result.type);
+      onSendMessage(message.trim(), result.url, result.type, replyTo?.id);
       setMessage("");
       
       if (onTyping) {
@@ -121,6 +144,10 @@ export default function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
       
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
+      }
+
+      if (onCancelReply) {
+        onCancelReply();
       }
     }
     
@@ -182,7 +209,7 @@ export default function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
     e.preventDefault();
     if (!message.trim()) return;
 
-    onSendMessage(message.trim());
+    onSendMessage(message.trim(), undefined, undefined, replyTo?.id);
     setMessage("");
     
     if (onTyping) {
@@ -192,6 +219,19 @@ export default function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
+
+    if (onCancelReply) {
+      onCancelReply();
+    }
+  };
+
+  const getReplyPreviewText = () => {
+    if (!replyTo) return "";
+    if (replyTo.content) return replyTo.content;
+    if (replyTo.media_type === "image") return "📷 Hình ảnh";
+    if (replyTo.media_type === "video") return "🎥 Video";
+    if (replyTo.media_type === "document") return "📄 Tài liệu";
+    return "Tin nhắn";
   };
 
   const hasText = message.trim().length > 0;
@@ -272,88 +312,116 @@ export default function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
         </DialogContent>
       </Dialog>
 
-      <form
-        onSubmit={handleSubmit}
-        className="bg-[hsl(var(--wa-chat-bg))] px-3 py-2"
-      >
-        <div className="flex items-end gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="*/*"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-          
-          {/* Emoji button */}
-          <Button 
-            type="button" 
-            variant="ghost" 
-            size="icon"
-            disabled={uploading}
-            className="shrink-0 h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-transparent"
-          >
-            <Smile className="h-6 w-6" />
-          </Button>
-
-          {/* Attach dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                type="button" 
-                variant="ghost" 
+      <div className="bg-[hsl(var(--wa-chat-bg))]">
+        {/* Reply preview bar */}
+        {replyTo && (
+          <div className="px-3 pt-2 animate-fade-in">
+            <div className="flex items-center gap-2 bg-card rounded-lg p-2 border-l-4 border-primary">
+              <Reply className="h-4 w-4 text-primary shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-primary">
+                  {replyTo.sender?.username || "Người dùng"}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {getReplyPreviewText()}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
                 size="icon"
-                disabled={uploading}
-                className="shrink-0 h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-transparent"
+                className="h-6 w-6 shrink-0"
+                onClick={onCancelReply}
               >
-                <Paperclip className="h-6 w-6 rotate-45" />
+                <X className="h-4 w-4" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48 bg-card">
-              <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                <File className="h-4 w-4 mr-2 text-purple-500" />
-                Tài liệu
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                <Camera className="h-4 w-4 mr-2 text-red-500" />
-                Camera
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                <Image className="h-4 w-4 mr-2 text-blue-500" />
-                Thư viện
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Input field - WhatsApp style */}
-          <div className="flex-1 bg-card rounded-3xl border border-border overflow-hidden">
-            <textarea
-              ref={textareaRef}
-              value={message}
-              onChange={handleChange}
-              onKeyDown={handleKeyDown}
-              placeholder="Nhập tin nhắn"
-              rows={1}
-              className="w-full px-4 py-2.5 text-sm bg-transparent resize-none outline-none max-h-[120px] min-h-[40px]"
-              disabled={uploading}
-            />
+            </div>
           </div>
+        )}
 
-          {/* Send or Mic button */}
-          <Button 
-            type={hasText ? "submit" : "button"}
-            size="icon"
-            disabled={uploading}
-            className="shrink-0 h-10 w-10 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
-          >
-            {hasText ? (
-              <Send className="h-5 w-5" />
-            ) : (
-              <Mic className="h-5 w-5" />
-            )}
-          </Button>
-        </div>
-      </form>
+        <form
+          onSubmit={handleSubmit}
+          className="px-3 py-2"
+        >
+          <div className="flex items-end gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="*/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            
+            {/* Emoji button */}
+            <Button 
+              type="button" 
+              variant="ghost" 
+              size="icon"
+              disabled={uploading}
+              className="shrink-0 h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-transparent"
+            >
+              <Smile className="h-6 w-6" />
+            </Button>
+
+            {/* Attach dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon"
+                  disabled={uploading}
+                  className="shrink-0 h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-transparent"
+                >
+                  <Paperclip className="h-6 w-6 rotate-45" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48 bg-card">
+                <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                  <File className="h-4 w-4 mr-2 text-purple-500" />
+                  Tài liệu
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                  <Camera className="h-4 w-4 mr-2 text-red-500" />
+                  Camera
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                  <Image className="h-4 w-4 mr-2 text-blue-500" />
+                  Thư viện
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Input field - WhatsApp style */}
+            <div className="flex-1 bg-card rounded-3xl border border-border overflow-hidden">
+              <textarea
+                ref={textareaRef}
+                value={message}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                placeholder={replyTo ? "Nhập tin nhắn trả lời..." : "Nhập tin nhắn"}
+                rows={1}
+                className="w-full px-4 py-2.5 text-sm bg-transparent resize-none outline-none max-h-[120px] min-h-[40px]"
+                disabled={uploading}
+              />
+            </div>
+
+            {/* Send or Mic button */}
+            <Button 
+              type={hasText ? "submit" : "button"}
+              size="icon"
+              disabled={uploading}
+              className="shrink-0 h-10 w-10 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
+            >
+              {hasText ? (
+                <Send className="h-5 w-5" />
+              ) : (
+                <Mic className="h-5 w-5" />
+              )}
+            </Button>
+          </div>
+        </form>
+      </div>
     </>
   );
 }

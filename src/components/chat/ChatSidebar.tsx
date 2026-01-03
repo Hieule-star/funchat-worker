@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { usePresence } from "@/hooks/usePresence";
+import { useSoundSettings } from "@/hooks/useSoundSettings";
 import ConversationItem from "./ConversationItem";
 import { Button } from "@/components/ui/button";
-import { Search, MoreVertical, MessageSquarePlus, Camera, Users } from "lucide-react";
+import { Search, MoreVertical, MessageSquarePlus, Camera, Users, Volume2, VolumeX } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -12,6 +13,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import NewConversationModal from "./NewConversationModal";
 
@@ -26,6 +28,7 @@ export default function ChatSidebar({
 }: ChatSidebarProps) {
   const { user, profile } = useAuth();
   const { onlineUsers } = usePresence(user?.id);
+  const { messageNotificationEnabled, toggleMessageNotification } = useSoundSettings();
   const [conversations, setConversations] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
@@ -220,7 +223,21 @@ export default function ChatSidebar({
                 <MoreVertical className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 bg-card">
+            <DropdownMenuContent align="end" className="w-56 bg-card">
+              <DropdownMenuItem onClick={toggleMessageNotification} className="flex items-center gap-2">
+                {messageNotificationEnabled ? (
+                  <>
+                    <Volume2 className="h-4 w-4" />
+                    <span>Âm thanh thông báo: Bật</span>
+                  </>
+                ) : (
+                  <>
+                    <VolumeX className="h-4 w-4" />
+                    <span>Âm thanh thông báo: Tắt</span>
+                  </>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem>Nhóm mới</DropdownMenuItem>
               <DropdownMenuItem>Tin nhắn mới</DropdownMenuItem>
               <DropdownMenuItem>Tin nhắn có gắn dấu sao</DropdownMenuItem>

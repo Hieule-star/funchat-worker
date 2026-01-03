@@ -8,6 +8,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { MessageNotificationProvider } from "@/components/MessageNotificationProvider";
 import { IncomingCallProvider } from "@/components/IncomingCallProvider";
 import { FriendRequestNotificationProvider } from "@/components/FriendRequestNotificationProvider";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 import Navbar from "./components/Navbar";
 import Friends from "./pages/Friends";
@@ -24,9 +25,10 @@ const queryClient = new QueryClient();
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange={false}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
         <BrowserRouter>
           <AuthProvider>
             <IncomingCallProvider>
@@ -90,8 +92,9 @@ const App = () => {
               </MessageNotificationProvider>
             </IncomingCallProvider>
           </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };

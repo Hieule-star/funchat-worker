@@ -10,6 +10,7 @@ import DeviceSelectionModal from "@/components/chat/DeviceSelectionModal";
 import OutgoingCallModal from "@/components/chat/OutgoingCallModal";
 import { ForwardMessageModal } from "@/components/chat/ForwardMessageModal";
 import PinnedMessagesPanel from "@/components/chat/PinnedMessagesPanel";
+import EditMessageModal from "@/components/chat/EditMessageModal";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -30,6 +31,8 @@ export default function Chat() {
   const [replyTo, setReplyTo] = useState<any>(null);
   const [forwardMessage, setForwardMessage] = useState<any>(null);
   const [forwardModalOpen, setForwardModalOpen] = useState(false);
+  const [editMessage, setEditMessage] = useState<any>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const [pinnedPanelOpen, setPinnedPanelOpen] = useState(false);
   const [videoCallOpen, setVideoCallOpen] = useState(false);
   const [deviceSelectionOpen, setDeviceSelectionOpen] = useState(false);
@@ -199,11 +202,16 @@ export default function Chat() {
           console.log("Realtime UPDATE payload:", payload);
           const updatedMessage = payload.new as any;
           
-          // Update the message in state (for is_read status changes)
+          // Update the message in state (for is_read status changes and edits)
           setMessages((prev) =>
             prev.map((m) =>
               m.id === updatedMessage.id
-                ? { ...m, is_read: updatedMessage.is_read }
+                ? { 
+                    ...m, 
+                    is_read: updatedMessage.is_read,
+                    content: updatedMessage.content,
+                    is_edited: updatedMessage.is_edited
+                  }
                 : m
             )
           );
@@ -255,6 +263,59 @@ export default function Chat() {
   const handleForwardMessage = (message: any) => {
     setForwardMessage(message);
     setForwardModalOpen(true);
+  };
+
+  const handleEditMessage = (message: any) => {
+    setEditMessage(message);
+    setEditModalOpen(true);
+  };
+
+  const handleSaveEdit = async (messageId: string, newContent: string) => {
+    if (!user) return;
+
+    // First, save the original content to edit history
+    const originalMessage = messages.find(m => m.id === messageId);
+    if (originalMessage?.content) {
+      await supabase.from("message_edits").insert({
+        message_id: messageId,
+        original_content: originalMessage.content,
+        edited_by: user.id
+      });
+    }
+
+    // Then update the message
+    const { error } = await supabase
+      .from("messages")
+      .update({ 
+        content: newContent, 
+        is_edited: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", messageId)
+      .eq("sender_id", user.id);
+
+    if (error) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể chỉnh sửa tin nhắn. Vui lòng thử lại.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Update local state
+    setMessages(prev => 
+      prev.map(m => 
+        m.id === messageId 
+          ? { ...m, content: newContent, is_edited: true }
+          : m
+      )
+    );
+
+    toast({
+      title: "Đã chỉnh sửa",
+      description: "Tin nhắn đã được chỉnh sửa"
+    });
   };
 
   const handleForward = async (targetConversationId: string, message: any) => {
@@ -571,6 +632,7 @@ export default function Chat() {
                     });
                   }
                 }}
+                onEditMessage={handleEditMessage}
               />
             )}
 
@@ -725,6 +787,16 @@ export default function Chat() {
             }
           }, 300);
         }}
+      />
+
+      <EditMessageModal
+        isOpen={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          setEditMessage(null);
+        }}
+        message={editMessage}
+        onSave={handleSaveEdit}
       />
     </div>
   );

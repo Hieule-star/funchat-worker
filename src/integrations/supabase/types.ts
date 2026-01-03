@@ -174,6 +174,38 @@ export type Database = {
           },
         ]
       }
+      message_edits: {
+        Row: {
+          edited_at: string
+          edited_by: string
+          id: string
+          message_id: string
+          original_content: string | null
+        }
+        Insert: {
+          edited_at?: string
+          edited_by: string
+          id?: string
+          message_id: string
+          original_content?: string | null
+        }
+        Update: {
+          edited_at?: string
+          edited_by?: string
+          id?: string
+          message_id?: string
+          original_content?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_edits_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_reactions: {
         Row: {
           created_at: string
@@ -219,6 +251,7 @@ export type Database = {
           conversation_id: string
           created_at: string
           id: string
+          is_edited: boolean
           is_forwarded: boolean
           is_read: boolean
           media_type: string | null
@@ -233,6 +266,7 @@ export type Database = {
           conversation_id: string
           created_at?: string
           id?: string
+          is_edited?: boolean
           is_forwarded?: boolean
           is_read?: boolean
           media_type?: string | null
@@ -247,6 +281,7 @@ export type Database = {
           conversation_id?: string
           created_at?: string
           id?: string
+          is_edited?: boolean
           is_forwarded?: boolean
           is_read?: boolean
           media_type?: string | null

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { FileText, Download, FileArchive, FileSpreadsheet, FileCode, File, CheckCheck, Trash2, MoreVertical, Reply, Forward, Smile, Pin } from "lucide-react";
+import { FileText, Download, FileArchive, FileSpreadsheet, FileCode, File, CheckCheck, Trash2, MoreVertical, Reply, Forward, Smile, Pin, CornerUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -270,8 +270,16 @@ export default function MessageBubble({
               </div>
             )}
 
+            {/* Forwarded indicator */}
+            {message.is_forwarded && (
+              <div className="px-3 pt-2 flex items-center gap-1 text-muted-foreground">
+                <CornerUpRight className="h-3 w-3" />
+                <span className="text-xs italic">Đã chuyển tiếp</span>
+              </div>
+            )}
+
             {/* Sender name for group chats (received messages only) */}
-            {!isSent && message.sender?.username && !replyToMessage && (
+            {!isSent && message.sender?.username && !replyToMessage && !message.is_forwarded && (
               <p className="px-3 pt-2 text-xs font-semibold text-primary">
                 {message.sender.username}
               </p>

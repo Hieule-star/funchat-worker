@@ -98,13 +98,13 @@ export default function Profile() {
         messagesCount: messagesCount || 0,
       });
 
-      // Fetch achievements
-      const { data: achievementsData } = await supabase
-        .from("user_achievements")
-        .select("*")
-        .eq("user_id", user.id);
-
-      setAchievements(achievementsData || []);
+      // Fetch achievements (table doesn't exist yet - skip for now)
+      // const { data: achievementsData } = await supabase
+      //   .from("user_achievements")
+      //   .select("*")
+      //   .eq("user_id", user.id);
+      // setAchievements(achievementsData || []);
+      setAchievements([]);
 
     } catch (error) {
       console.error("Error fetching user data:", error);

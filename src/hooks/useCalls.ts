@@ -6,12 +6,13 @@ export interface Call {
   id: string;
   caller_id: string;
   receiver_id: string;
-  room_id: string;
-  status: "calling" | "accepted" | "rejected" | "ended" | "missed";
+  room_id?: string;
+  status: "calling" | "accepted" | "rejected" | "ended" | "missed" | "ringing";
   call_type: "video" | "audio";
-  started_at: string;
+  started_at: string | null;
   ended_at: string | null;
   created_at: string;
+  conversation_id?: string | null;
   caller?: {
     id: string;
     username: string;

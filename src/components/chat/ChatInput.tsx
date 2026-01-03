@@ -1,10 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Send, Smile, Paperclip, Mic, FileText } from "lucide-react";
+import { Send, Smile, Paperclip, Mic, FileText, Camera, Image, File } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ChatInputProps {
   onSendMessage: (content: string, mediaUrl?: string, mediaType?: string) => void;
@@ -20,6 +25,7 @@ export default function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
   const [uploading, setUploading] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     return () => {
@@ -29,20 +35,25 @@ export default function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
     };
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px';
+    }
+  }, [message]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setMessage(value);
 
-    // Trigger typing indicator
     if (onTyping && value.length > 0) {
       onTyping(true);
 
-      // Clear existing timeout
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
 
-      // Stop typing after 1 second of no input
       typingTimeoutRef.current = setTimeout(() => {
         onTyping(false);
       }, 1000);
@@ -51,11 +62,17 @@ export default function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check file size (max 4000MB)
     if (file.size > 4000 * 1024 * 1024) {
       toast({
         title: "File quá lớn",
@@ -67,7 +84,6 @@ export default function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
 
     setSelectedFile(file);
     
-    // Create preview URL for images and videos
     if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
@@ -75,7 +91,6 @@ export default function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
     
     setShowPreview(true);
     
-    // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -100,18 +115,15 @@ export default function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
       onSendMessage(message.trim(), result.url, result.type);
       setMessage("");
       
-      // Stop typing indicator
       if (onTyping) {
         onTyping(false);
       }
       
-      // Clear timeout
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
     }
     
-    // Cleanup
     setSelectedFile(null);
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
@@ -119,11 +131,10 @@ export default function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
     }
   };
 
-  const uploadFile = async (file: File): Promise<{ url: string; type: string } | null> => {
+  const uploadFile = async (file: globalThis.File): Promise<{ url: string; type: string } | null> => {
     try {
       setUploading(true);
 
-      // Get presigned URL from edge function
       const { data, error } = await supabase.functions.invoke("generate-presigned-url", {
         body: {
           fileName: file.name,
@@ -140,7 +151,6 @@ export default function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
 
       console.log("Uploading to R2:", data.presignedUrl);
 
-      // Upload to R2
       const uploadResponse = await fetch(data.presignedUrl, {
         method: "PUT",
         body: file,
@@ -175,16 +185,16 @@ export default function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
     onSendMessage(message.trim());
     setMessage("");
     
-    // Stop typing indicator
     if (onTyping) {
       onTyping(false);
     }
     
-    // Clear timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
   };
+
+  const hasText = message.trim().length > 0;
 
   return (
     <>
@@ -244,6 +254,7 @@ export default function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
               type="button"
               onClick={handleConfirmSend}
               disabled={uploading}
+              className="bg-primary hover:bg-primary/90"
             >
               {uploading ? (
                 <>
@@ -263,9 +274,9 @@ export default function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
 
       <form
         onSubmit={handleSubmit}
-        className="border-t border-border bg-card p-4"
+        className="bg-[hsl(var(--wa-chat-bg))] px-3 py-2"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-end gap-2">
           <input
             ref={fileInputRef}
             type="file"
@@ -274,42 +285,72 @@ export default function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
             className="hidden"
           />
           
+          {/* Emoji button */}
           <Button 
             type="button" 
             variant="ghost" 
             size="icon"
-            onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="shrink-0"
+            className="shrink-0 h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-transparent"
           >
-            <Paperclip className="h-5 w-5" />
+            <Smile className="h-6 w-6" />
           </Button>
 
-          <Input
-            value={message}
-            onChange={handleChange}
-            placeholder="Nhập tin nhắn..."
-            className="flex-1 rounded-full"
-            disabled={uploading}
-          />
+          {/* Attach dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="icon"
+                disabled={uploading}
+                className="shrink-0 h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-transparent"
+              >
+                <Paperclip className="h-6 w-6 rotate-45" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48 bg-card">
+              <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                <File className="h-4 w-4 mr-2 text-purple-500" />
+                Tài liệu
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                <Camera className="h-4 w-4 mr-2 text-red-500" />
+                Camera
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                <Image className="h-4 w-4 mr-2 text-blue-500" />
+                Thư viện
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-          <Button 
-            type="button" 
-            variant="ghost" 
-            size="icon" 
-            disabled={uploading}
-            className="shrink-0"
-          >
-            <Smile className="h-5 w-5" />
-          </Button>
+          {/* Input field - WhatsApp style */}
+          <div className="flex-1 bg-card rounded-3xl border border-border overflow-hidden">
+            <textarea
+              ref={textareaRef}
+              value={message}
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Nhập tin nhắn"
+              rows={1}
+              className="w-full px-4 py-2.5 text-sm bg-transparent resize-none outline-none max-h-[120px] min-h-[40px]"
+              disabled={uploading}
+            />
+          </div>
 
+          {/* Send or Mic button */}
           <Button 
-            type="submit" 
+            type={hasText ? "submit" : "button"}
             size="icon"
             disabled={uploading}
-            className="shrink-0 h-10 w-10 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground"
+            className="shrink-0 h-10 w-10 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
           >
-            <Mic className="h-5 w-5" />
+            {hasText ? (
+              <Send className="h-5 w-5" />
+            ) : (
+              <Mic className="h-5 w-5" />
+            )}
           </Button>
         </div>
       </form>

@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { MessageNotificationProvider } from "@/components/MessageNotificationProvider";
 import { IncomingCallProvider } from "@/components/IncomingCallProvider";
@@ -27,15 +28,16 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange={false}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <IncomingCallProvider>
-              <MessageNotificationProvider>
-                <FriendRequestNotificationProvider>
-                  <Navbar />
+        <LanguageProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+          <BrowserRouter>
+            <AuthProvider>
+              <IncomingCallProvider>
+                <MessageNotificationProvider>
+                  <FriendRequestNotificationProvider>
+                    <Navbar />
                   <Routes>
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/auth/callback" element={<AuthCallback />} />
@@ -90,12 +92,13 @@ const App = () => {
                     />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
-                </FriendRequestNotificationProvider>
-              </MessageNotificationProvider>
-            </IncomingCallProvider>
-          </AuthProvider>
-          </BrowserRouter>
-        </TooltipProvider>
+                  </FriendRequestNotificationProvider>
+                </MessageNotificationProvider>
+              </IncomingCallProvider>
+            </AuthProvider>
+            </BrowserRouter>
+          </TooltipProvider>
+        </LanguageProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

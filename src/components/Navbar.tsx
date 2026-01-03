@@ -2,16 +2,16 @@ import { Link, useLocation } from "react-router-dom";
 import { Users, UserCircle, Sun, Moon, LogOut, User as UserIcon, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "next-themes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import FriendRequestDropdown from "@/components/friends/FriendRequestDropdown";
-import NotificationBadge from "@/components/NotificationBadge";
 import logo from "@/assets/logo.png";
 
 export default function Navbar() {
   const location = useLocation();
   const { user, profile, signOut } = useAuth();
+  const { language, toggleLanguage, t } = useLanguage();
   const { theme, setTheme, resolvedTheme } = useTheme();
 
   const toggleTheme = () => {
@@ -19,9 +19,9 @@ export default function Navbar() {
   };
 
   const navItems = [
-    { icon: MessageCircle, label: "Trò chuyện", path: "/" },
-    { icon: Users, label: "Danh bạ", path: "/friends" },
-    { icon: UserCircle, label: "Hồ sơ", path: "/profile" },
+    { icon: MessageCircle, label: t("nav.chat"), path: "/" },
+    { icon: Users, label: t("nav.contacts"), path: "/friends" },
+    { icon: UserCircle, label: t("nav.profile"), path: "/profile" },
   ];
 
   return (
@@ -49,8 +49,14 @@ export default function Navbar() {
                   );
                 })}
 
-                <FriendRequestDropdown />
-                <NotificationBadge />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleLanguage}
+                  className="font-bold text-xs px-2"
+                >
+                  {language === "vi" ? "EN" : "VI"}
+                </Button>
               </>
             )}
 
@@ -86,17 +92,17 @@ export default function Navbar() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link to="/profile"><UserIcon className="mr-2 h-4 w-4" />Hồ sơ</Link>
+                    <Link to="/profile"><UserIcon className="mr-2 h-4 w-4" />{t("nav.profile")}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => signOut()}>
-                    <LogOut className="mr-2 h-4 w-4" />Đăng xuất
+                    <LogOut className="mr-2 h-4 w-4" />{t("nav.logout")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : location.pathname !== '/auth' && (
               <Button asChild className="ml-2 gap-2 bg-primary hover:bg-primary-light">
-                <Link to="/auth"><UserIcon className="h-4 w-4" /><span className="hidden sm:inline">Đăng nhập</span></Link>
+                <Link to="/auth"><UserIcon className="h-4 w-4" /><span className="hidden sm:inline">{t("nav.login")}</span></Link>
               </Button>
             )}
           </div>

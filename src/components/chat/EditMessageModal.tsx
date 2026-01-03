@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -28,6 +29,20 @@ export default function EditMessageModal({
   const [content, setContent] = useState(message?.content || "");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Update content when message changes
+  useEffect(() => {
+    if (message?.content !== undefined) {
+      setContent(message.content || "");
+    }
+  }, [message]);
+
+  // Reset content when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setContent("");
+    }
+  }, [isOpen]);
+
   const handleSave = async () => {
     if (!message || !content.trim()) return;
     
@@ -35,21 +50,21 @@ export default function EditMessageModal({
     try {
       await onSave(message.id, content.trim());
       onClose();
+    } catch (error) {
+      console.error("Error saving message:", error);
     } finally {
       setIsLoading(false);
     }
   };
-
-  // Update content when message changes
-  if (message?.content !== undefined && content !== message.content && !isLoading) {
-    setContent(message.content || "");
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Chỉnh sửa tin nhắn</DialogTitle>
+          <DialogDescription>
+            Chỉnh sửa nội dung tin nhắn của bạn
+          </DialogDescription>
         </DialogHeader>
         
         <div className="py-4">

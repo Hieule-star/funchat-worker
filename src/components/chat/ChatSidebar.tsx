@@ -137,7 +137,19 @@ export default function ChatSidebar({
           schema: "public",
           table: "messages",
         },
-        () => fetchConversations()
+        (payload) => {
+          // Only refetch on INSERT or when is_read changes to true (someone read a message)
+          if (payload.eventType === 'INSERT') {
+            fetchConversations();
+          } else if (payload.eventType === 'UPDATE') {
+            const newRecord = payload.new as any;
+            const oldRecord = payload.old as any;
+            // Only refetch if is_read changed or content changed
+            if (oldRecord?.is_read !== newRecord?.is_read || oldRecord?.content !== newRecord?.content) {
+              fetchConversations();
+            }
+          }
+        }
       )
       .subscribe();
 

@@ -13,10 +13,12 @@ import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { useSoundSettings } from "@/hooks/useSoundSettings";
+import { usePresence } from "@/hooks/usePresence";
 
 export default function Chat() {
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const { onlineUsers } = usePresence(user?.id);
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -408,6 +410,7 @@ export default function Chat() {
               conversation={selectedConversation}
               onVideoCall={handleVideoCall}
               onVoiceCall={handleVoiceCall}
+              onlineUsers={onlineUsers}
             />
             
             {loading ? (

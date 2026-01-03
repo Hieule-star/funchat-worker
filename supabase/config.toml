@@ -1,10 +1,1 @@
-project_id = "krajdsugcvwytpsqnbzs"
-
-[functions.get-upload-url]
-verify_jwt = true
-
-[functions.realtime-video]
-verify_jwt = false
-
-[functions.admin-cloudflare-stream-config]
-verify_jwt = true
+project_id = "jtldrssvklgokbmjkjoc"

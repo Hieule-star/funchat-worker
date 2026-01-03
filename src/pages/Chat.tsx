@@ -22,6 +22,7 @@ export default function Chat() {
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [replyTo, setReplyTo] = useState<any>(null);
   const [videoCallOpen, setVideoCallOpen] = useState(false);
   const [deviceSelectionOpen, setDeviceSelectionOpen] = useState(false);
   const [callMode, setCallMode] = useState<'video' | 'audio'>('video');
@@ -193,7 +194,7 @@ export default function Chat() {
     };
   }, [selectedConversation]);
 
-  const handleSendMessage = async (content: string, mediaUrl?: string, mediaType?: string) => {
+  const handleSendMessage = async (content: string, mediaUrl?: string, mediaType?: string, replyToId?: string) => {
     if (!selectedConversation || !user) return;
     if (!content.trim() && !mediaUrl) return;
 
@@ -203,6 +204,7 @@ export default function Chat() {
       content: content.trim() || "",
       media_url: mediaUrl,
       media_type: mediaType,
+      reply_to_id: replyToId || null,
     });
 
     if (error) {
@@ -213,6 +215,19 @@ export default function Chat() {
         variant: "destructive"
       });
     }
+  };
+
+  const handleReplyMessage = (message: any) => {
+    setReplyTo({
+      id: message.id,
+      content: message.content,
+      sender: message.sender,
+      media_type: message.media_type
+    });
+  };
+
+  const handleCancelReply = () => {
+    setReplyTo(null);
   };
 
   // Handle call acceptance - open video modal for CALLER
@@ -478,12 +493,15 @@ export default function Chat() {
                 currentUserId={user?.id}
                 typingUsers={typingUsers}
                 onDeleteMessage={handleDeleteMessage}
+                onReplyMessage={handleReplyMessage}
               />
             )}
 
             <ChatInput 
               onSendMessage={handleSendMessage}
               onTyping={handleTyping}
+              replyTo={replyTo}
+              onCancelReply={handleCancelReply}
             />
           </>
         ) : (

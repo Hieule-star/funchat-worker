@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import MessageBubble from "./MessageBubble";
 import TypingIndicator from "./TypingIndicator";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -16,16 +16,25 @@ interface MessageListProps {
   currentUserId?: string;
   typingUsers?: TypingUser[];
   onDeleteMessage?: (messageId: string) => Promise<void>;
+  onReplyMessage?: (message: any) => void;
 }
 
 export default function MessageList({ 
   messages, 
   currentUserId, 
   typingUsers = [],
-  onDeleteMessage 
+  onDeleteMessage,
+  onReplyMessage
 }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
+
+  // Create a map of message IDs to messages for quick reply lookup
+  const messagesMap = useMemo(() => {
+    const map = new Map<string, any>();
+    messages.forEach(msg => map.set(msg.id, msg));
+    return map;
+  }, [messages]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -59,6 +68,18 @@ export default function MessageList({
     setDeletingMessageId(null);
   };
 
+  const getReplyToMessage = (replyToId: string | null) => {
+    if (!replyToId) return null;
+    const replyMsg = messagesMap.get(replyToId);
+    if (!replyMsg) return null;
+    return {
+      id: replyMsg.id,
+      content: replyMsg.content,
+      sender: replyMsg.sender,
+      media_type: replyMsg.media_type
+    };
+  };
+
   return (
     <ScrollArea className="flex-1 bg-[hsl(var(--wa-chat-bg))]">
       {/* WhatsApp-style wallpaper pattern overlay */}
@@ -74,6 +95,7 @@ export default function MessageList({
           {messages.map((message, index) => {
             const previousMessage = index > 0 ? messages[index - 1] : null;
             const showDateDivider = shouldShowDateDivider(message, previousMessage);
+            const replyToMessage = getReplyToMessage(message.reply_to_id);
             
             return (
               <div key={message.id}>
@@ -89,6 +111,8 @@ export default function MessageList({
                   isSent={message.sender_id === currentUserId}
                   onDelete={onDeleteMessage ? handleDelete : undefined}
                   isDeleting={deletingMessageId === message.id}
+                  onReply={onReplyMessage}
+                  replyToMessage={replyToMessage}
                 />
               </div>
             );

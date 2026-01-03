@@ -20,6 +20,18 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.logout": "Đăng xuất",
     "nav.login": "Đăng nhập",
     
+    // User Search
+    "userSearch.search": "Tìm kiếm",
+    "userSearch.title": "Tìm kiếm người dùng",
+    "userSearch.byUsername": "Username",
+    "userSearch.byPhone": "Số điện thoại",
+    "userSearch.usernamePlaceholder": "Nhập username...",
+    "userSearch.phonePlaceholder": "Nhập số điện thoại...",
+    "userSearch.noResults": "Không tìm thấy kết quả",
+    "userSearch.hint": "Nhập để tìm kiếm người dùng",
+    "userSearch.unknownUser": "Người dùng",
+    "userSearch.error": "Không thể tạo cuộc trò chuyện",
+    
     // Chat
     "chat.typeMessage": "Nhập tin nhắn...",
     "chat.online": "Đang hoạt động",
@@ -78,6 +90,18 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.profile": "Profile",
     "nav.logout": "Logout",
     "nav.login": "Login",
+    
+    // User Search
+    "userSearch.search": "Search",
+    "userSearch.title": "Search Users",
+    "userSearch.byUsername": "Username",
+    "userSearch.byPhone": "Phone",
+    "userSearch.usernamePlaceholder": "Enter username...",
+    "userSearch.phonePlaceholder": "Enter phone number...",
+    "userSearch.noResults": "No results found",
+    "userSearch.hint": "Type to search users",
+    "userSearch.unknownUser": "User",
+    "userSearch.error": "Could not create conversation",
     
     // Chat
     "chat.typeMessage": "Type a message...",

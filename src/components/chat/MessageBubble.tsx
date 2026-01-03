@@ -2,7 +2,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { FileText, Download, FileArchive, FileSpreadsheet, FileCode, File, CheckCheck, Trash2, MoreVertical, Reply, Forward, Smile, Pin, CornerUpRight, Copy } from "lucide-react";
+import { FileText, Download, FileArchive, FileSpreadsheet, FileCode, File, CheckCheck, Trash2, MoreVertical, Reply, Forward, Smile, Pin, CornerUpRight, Copy, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import ReactionPicker from "./ReactionPicker";
 import MessageReactions from "./MessageReactions";
+import MessageEditHistory from "./MessageEditHistory";
 import { useToast } from "@/hooks/use-toast";
 
 interface ReplyToMessage {
@@ -58,6 +59,7 @@ interface MessageBubbleProps {
   onToggleReaction?: (messageId: string, emoji: string) => void;
   isPinned?: boolean;
   onTogglePin?: (messageId: string) => void;
+  onEdit?: (message: any) => void;
 }
 
 export default function MessageBubble({ 
@@ -71,7 +73,8 @@ export default function MessageBubble({
   reactions = [],
   onToggleReaction,
   isPinned = false,
-  onTogglePin
+  onTogglePin,
+  onEdit
 }: MessageBubbleProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
@@ -90,6 +93,12 @@ export default function MessageBubble({
       toast({
         description: "Đã sao chép tin nhắn",
       });
+    }
+  };
+
+  const handleEdit = () => {
+    if (onEdit && message.content) {
+      onEdit(message);
     }
   };
 
@@ -352,6 +361,15 @@ export default function MessageBubble({
             {message.content && (
               <div className="px-3 py-2 pb-4">
                 <p className="text-sm break-words leading-relaxed">{message.content}</p>
+                {/* Edit indicator */}
+                {message.is_edited && (
+                  <div className="mt-1">
+                    <MessageEditHistory 
+                      messageId={message.id} 
+                      isEdited={message.is_edited} 
+                    />
+                  </div>
+                )}
               </div>
             )}
 
@@ -414,6 +432,14 @@ export default function MessageBubble({
             <ContextMenuItem onClick={handleCopyText}>
               <Copy className="h-4 w-4 mr-2" />
               Sao chép
+            </ContextMenuItem>
+          )}
+
+          {/* Edit - only for sent messages with text content */}
+          {isSent && message.content && onEdit && (
+            <ContextMenuItem onClick={handleEdit}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Chỉnh sửa
             </ContextMenuItem>
           )}
 

@@ -30,6 +30,7 @@ interface MessageListProps {
   onToggleReaction?: (messageId: string, emoji: string) => void;
   pinnedMessageIds?: Set<string>;
   onTogglePin?: (messageId: string) => void;
+  onEditMessage?: (message: any) => void;
 }
 
 export default function MessageList({ 
@@ -42,7 +43,8 @@ export default function MessageList({
   reactions = {},
   onToggleReaction,
   pinnedMessageIds = new Set(),
-  onTogglePin
+  onTogglePin,
+  onEditMessage
 }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
@@ -148,6 +150,7 @@ export default function MessageList({
                   onToggleReaction={onToggleReaction}
                   isPinned={pinnedMessageIds.has(message.id)}
                   onTogglePin={onTogglePin}
+                  onEdit={onEditMessage}
                 />
               </div>
             );

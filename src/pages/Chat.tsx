@@ -15,6 +15,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { useSoundSettings } from "@/hooks/useSoundSettings";
 import { usePresence } from "@/hooks/usePresence";
+import { useMessageReactions } from "@/hooks/useMessageReactions";
 
 export default function Chat() {
   const { user, profile } = useAuth();
@@ -58,6 +59,9 @@ export default function Chat() {
   );
   
   const { messageNotificationEnabled } = useSoundSettings();
+  
+  // Reactions hook
+  const { reactions, fetchReactions, toggleReaction } = useMessageReactions(selectedConversation?.id);
 
   // Use global call context instead of direct hook
   const {
@@ -84,6 +88,9 @@ export default function Chat() {
 
       if (!error && data) {
         setMessages(data);
+        // Fetch reactions for all messages
+        const messageIds = data.map((m: any) => m.id);
+        fetchReactions(messageIds);
       }
       setLoading(false);
 
@@ -531,6 +538,8 @@ export default function Chat() {
                 onDeleteMessage={handleDeleteMessage}
                 onReplyMessage={handleReplyMessage}
                 onForwardMessage={handleForwardMessage}
+                reactions={reactions}
+                onToggleReaction={toggleReaction}
               />
             )}
 

@@ -110,7 +110,7 @@ export default function Chat() {
           filter: `conversation_id=eq.${selectedConversation.id}`,
         },
         async (payload) => {
-          console.log("Realtime payload.new:", payload.new);
+          console.log("Realtime INSERT payload.new:", payload.new);
           
           const newMessageData = payload.new as any;
           
@@ -162,6 +162,28 @@ export default function Chat() {
             }
             return [...prev, newMessage];
           });
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${selectedConversation.id}`,
+        },
+        (payload) => {
+          console.log("Realtime UPDATE payload:", payload);
+          const updatedMessage = payload.new as any;
+          
+          // Update the message in state (for is_read status changes)
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === updatedMessage.id
+                ? { ...m, is_read: updatedMessage.is_read }
+                : m
+            )
+          );
         }
       )
       .subscribe();

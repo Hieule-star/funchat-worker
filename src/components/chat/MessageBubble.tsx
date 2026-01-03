@@ -37,9 +37,11 @@ export default function MessageBubble({ message, isSent }: MessageBubbleProps) {
   const fileExtension = message.media_url ? message.media_url.split('.').pop()?.toUpperCase() || '' : '';
   const FileIcon = message.media_url ? getFileIcon(message.media_url) : File;
 
-  // Mock read status - in real app, connect to message status
-  const isRead = true;
-  const isDelivered = true;
+  // Message status based on actual data
+  // - Sent: message exists (always true if we're rendering it)
+  // - Delivered: message is in database (always true for rendered messages)
+  // - Read: is_read = true (recipient has opened the conversation)
+  const isRead = message.is_read === true;
 
   return (
     <div className={cn("flex mb-1", isSent ? "justify-end" : "justify-start")}>
@@ -138,16 +140,15 @@ export default function MessageBubble({ message, isSent }: MessageBubbleProps) {
             
             {isSent && (
               <span className={cn(
+                "transition-colors duration-200",
                 message.media_url && !message.content 
                   ? "text-white" 
                   : isRead ? "text-[hsl(var(--wa-double-tick))]" : "text-muted-foreground"
               )}>
                 {isRead ? (
                   <CheckCheck className="h-3.5 w-3.5" />
-                ) : isDelivered ? (
-                  <CheckCheck className="h-3.5 w-3.5" />
                 ) : (
-                  <Check className="h-3.5 w-3.5" />
+                  <CheckCheck className="h-3.5 w-3.5" />
                 )}
               </span>
             )}

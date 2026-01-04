@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Video, VideoOff, PhoneOff, Loader2, User, AlertCircle, CheckCircle2, Wifi } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, PhoneOff, Loader2, User, AlertCircle, CheckCircle2, Wifi, Monitor, MonitorOff } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAgoraCall } from "@/hooks/useAgoraCall";
 import { toast } from "sonner";
@@ -47,8 +47,11 @@ export default function AgoraVideoCallModal({
     leaveChannel,
     toggleAudio,
     toggleVideo,
+    startScreenShare,
+    stopScreenShare,
     isJoined,
     remoteUsers,
+    isScreenSharing,
   } = useAgoraCall();
 
   // Connection timer to track waiting time
@@ -202,6 +205,21 @@ export default function AgoraVideoCallModal({
     toggleVideo(newState);
   };
 
+  const handleToggleScreenShare = async () => {
+    try {
+      if (isScreenSharing) {
+        await stopScreenShare();
+        toast.success("Đã dừng chia sẻ màn hình");
+      } else {
+        await startScreenShare();
+        toast.success("Đang chia sẻ màn hình");
+      }
+    } catch (error) {
+      console.error('[AgoraModal] Screen share toggle error:', error);
+      toast.error("Không thể chia sẻ màn hình");
+    }
+  };
+
   const handleEndCall = async () => {
     await leaveChannel();
     setCallStatus('ended');
@@ -230,6 +248,12 @@ export default function AgoraVideoCallModal({
                   ref={localVideoRef} 
                   className="w-full h-full"
                 />
+                {isScreenSharing && (
+                  <div className="absolute top-1 left-1 bg-red-500/80 px-1.5 py-0.5 rounded text-xs text-white flex items-center gap-1">
+                    <Monitor className="h-3 w-3" />
+                    Đang chia sẻ
+                  </div>
+                )}
               </div>
             </>
           ) : (
@@ -291,6 +315,12 @@ export default function AgoraVideoCallModal({
                 {remoteUsers.length} user(s)
               </span>
             </div>
+            {isScreenSharing && (
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400">Screen:</span>
+                <span className="font-bold text-red-400">sharing</span>
+              </div>
+            )}
           </div>
 
           {/* Controls */}
@@ -305,14 +335,26 @@ export default function AgoraVideoCallModal({
             </Button>
 
             {mode === 'video' && (
-              <Button
-                variant={videoEnabled ? "secondary" : "destructive"}
-                size="icon"
-                className="h-14 w-14 rounded-full"
-                onClick={handleToggleVideo}
-              >
-                {videoEnabled ? <Video className="h-6 w-6" /> : <VideoOff className="h-6 w-6" />}
-              </Button>
+              <>
+                <Button
+                  variant={videoEnabled ? "secondary" : "destructive"}
+                  size="icon"
+                  className="h-14 w-14 rounded-full"
+                  onClick={handleToggleVideo}
+                  disabled={isScreenSharing}
+                >
+                  {videoEnabled ? <Video className="h-6 w-6" /> : <VideoOff className="h-6 w-6" />}
+                </Button>
+
+                <Button
+                  variant={isScreenSharing ? "destructive" : "secondary"}
+                  size="icon"
+                  className="h-14 w-14 rounded-full"
+                  onClick={handleToggleScreenShare}
+                >
+                  {isScreenSharing ? <MonitorOff className="h-6 w-6" /> : <Monitor className="h-6 w-6" />}
+                </Button>
+              </>
             )}
 
             <Button

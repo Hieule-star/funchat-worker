@@ -149,7 +149,7 @@ export default function DeviceSelectionModal({
     updatePreview();
   }, [selectedVideoDevice, selectedAudioDevice, open, mode]);
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     // For audio mode, only check audio device
     if (mode === 'video' && !selectedVideoDevice) {
       toast({
@@ -169,10 +169,18 @@ export default function DeviceSelectionModal({
       return;
     }
 
-    // Stop preview stream
+    // Stop preview stream and wait for devices to be fully released
     if (previewStream) {
-      previewStream.getTracks().forEach(track => track.stop());
+      console.log('[DeviceSelection] Stopping preview stream before call...');
+      previewStream.getTracks().forEach(track => {
+        track.stop();
+        console.log('[DeviceSelection] Stopped track:', track.kind, track.label);
+      });
       setPreviewStream(null);
+      
+      // Wait for devices to be fully released
+      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log('[DeviceSelection] Device release delay complete');
     }
 
     onConfirm({

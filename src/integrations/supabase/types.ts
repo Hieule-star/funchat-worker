@@ -20,9 +20,11 @@ export type Database = {
           caller_id: string
           conversation_id: string | null
           created_at: string
+          duration: number | null
           ended_at: string | null
           id: string
           receiver_id: string
+          recording_url: string | null
           started_at: string | null
           status: string
         }
@@ -31,9 +33,11 @@ export type Database = {
           caller_id: string
           conversation_id?: string | null
           created_at?: string
+          duration?: number | null
           ended_at?: string | null
           id?: string
           receiver_id: string
+          recording_url?: string | null
           started_at?: string | null
           status?: string
         }
@@ -42,9 +46,11 @@ export type Database = {
           caller_id?: string
           conversation_id?: string | null
           created_at?: string
+          duration?: number | null
           ended_at?: string | null
           id?: string
           receiver_id?: string
+          recording_url?: string | null
           started_at?: string | null
           status?: string
         }

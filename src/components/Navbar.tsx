@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Sun, Moon, LogOut, User as UserIcon, Globe, Check } from "lucide-react";
+import { Sun, Moon, LogOut, User as UserIcon, Globe, Check, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -87,6 +87,9 @@ export default function Navbar() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link to="/profile"><UserIcon className="mr-2 h-4 w-4" />{t("nav.profile")}</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/call-history"><History className="mr-2 h-4 w-4" />Lịch sử cuộc gọi</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => signOut()}>

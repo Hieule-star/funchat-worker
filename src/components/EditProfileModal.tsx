@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Loader2, 
@@ -94,6 +95,7 @@ export default function EditProfileModal({
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   // Reset form when modal opens
   useEffect(() => {
@@ -124,8 +126,8 @@ export default function EditProfileModal({
       if (result.success && result.cdnUrl) {
         setAvatarUrl(result.cdnUrl);
         toast({
-          title: "Thành công",
-          description: "Đã tải lên avatar",
+          title: t("profile.uploadSuccess"),
+          description: t("profile.avatarUploaded"),
         });
       } else {
         throw new Error(result.error || "Upload failed");
@@ -133,8 +135,8 @@ export default function EditProfileModal({
     } catch (error) {
       console.error("Error uploading avatar:", error);
       toast({
-        title: "Lỗi",
-        description: "Không thể tải lên avatar",
+        title: t("common.error"),
+        description: t("profile.uploadError"),
         variant: "destructive",
       });
     } finally {
@@ -152,8 +154,8 @@ export default function EditProfileModal({
       if (result.success && result.cdnUrl) {
         setCoverUrl(result.cdnUrl);
         toast({
-          title: "Thành công",
-          description: "Đã tải lên ảnh bìa",
+          title: t("profile.uploadSuccess"),
+          description: t("profile.coverUploaded"),
         });
       } else {
         throw new Error(result.error || "Upload failed");
@@ -161,8 +163,8 @@ export default function EditProfileModal({
     } catch (error) {
       console.error("Error uploading cover:", error);
       toast({
-        title: "Lỗi",
-        description: "Không thể tải lên ảnh bìa",
+        title: t("common.error"),
+        description: t("profile.uploadError"),
         variant: "destructive",
       });
     } finally {
@@ -177,8 +179,8 @@ export default function EditProfileModal({
       
       if (!user) {
         toast({
-          title: "Lỗi",
-          description: "Vui lòng đăng nhập để cập nhật profile",
+          title: t("common.error"),
+          description: t("profile.pleaseLogin"),
           variant: "destructive",
         });
         return;
@@ -204,8 +206,8 @@ export default function EditProfileModal({
       if (error) throw error;
 
       toast({
-        title: "Thành công",
-        description: "Profile đã được cập nhật",
+        title: t("common.success"),
+        description: t("profile.updateSuccess"),
       });
       
       onProfileUpdate();
@@ -213,8 +215,8 @@ export default function EditProfileModal({
     } catch (error) {
       console.error("Error updating profile:", error);
       toast({
-        title: "Lỗi",
-        description: "Không thể cập nhật profile",
+        title: t("common.error"),
+        description: t("profile.updateError"),
         variant: "destructive",
       });
     } finally {
@@ -231,9 +233,9 @@ export default function EditProfileModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Chỉnh sửa Profile</DialogTitle>
+          <DialogTitle>{t("profile.editProfile")}</DialogTitle>
           <DialogDescription>
-            Cập nhật thông tin cá nhân của bạn
+            {t("profile.editProfileDesc")}
           </DialogDescription>
         </DialogHeader>
 
@@ -241,18 +243,18 @@ export default function EditProfileModal({
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="basic" className="gap-2">
               <User className="h-4 w-4" />
-              Thông tin
+              {t("profile.info")}
             </TabsTrigger>
             <TabsTrigger value="social" className="gap-2">
               <Link className="h-4 w-4" />
-              Mạng xã hội
+              {t("profile.social")}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="basic" className="space-y-4 mt-4">
             {/* Cover Upload */}
             <div className="space-y-2">
-              <Label>Ảnh bìa</Label>
+              <Label>{t("profile.coverPhoto")}</Label>
               <div 
                 className="relative h-32 w-full rounded-lg bg-gradient-hero overflow-hidden cursor-pointer group"
                 onClick={() => coverInputRef.current?.click()}
@@ -292,7 +294,7 @@ export default function EditProfileModal({
 
             {/* Avatar Upload */}
             <div className="space-y-2">
-              <Label>Avatar</Label>
+              <Label>{t("profile.avatar")}</Label>
               <div className="flex items-center gap-4">
                 <div 
                   className="relative cursor-pointer group"
@@ -314,10 +316,10 @@ export default function EditProfileModal({
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground">
-                    Click vào avatar để thay đổi ảnh
+                    {t("profile.avatarHint")}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Định dạng: JPG, PNG. Tối đa 10MB
+                    {t("profile.avatarFormat")}
                   </p>
                 </div>
               </div>
@@ -332,45 +334,45 @@ export default function EditProfileModal({
 
             {/* Username */}
             <div className="space-y-2">
-              <Label htmlFor="username">Tên người dùng</Label>
+              <Label htmlFor="username">{t("profile.username")}</Label>
               <Input
                 id="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Nhập tên người dùng"
+                placeholder={t("profile.usernamePlaceholder")}
               />
             </div>
 
             {/* Job Title */}
             <div className="space-y-2">
-              <Label htmlFor="jobTitle">Nghề nghiệp</Label>
+              <Label htmlFor="jobTitle">{t("profile.job")}</Label>
               <Input
                 id="jobTitle"
                 value={jobTitle}
                 onChange={(e) => setJobTitle(e.target.value)}
-                placeholder="VD: Software Engineer"
+                placeholder={t("profile.jobPlaceholder")}
               />
             </div>
 
             {/* Location */}
             <div className="space-y-2">
-              <Label htmlFor="location">Vị trí</Label>
+              <Label htmlFor="location">{t("profile.location")}</Label>
               <Input
                 id="location"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder="VD: Hồ Chí Minh, Việt Nam"
+                placeholder={t("profile.locationPlaceholder")}
               />
             </div>
 
             {/* Bio */}
             <div className="space-y-2">
-              <Label htmlFor="bio">Giới thiệu</Label>
+              <Label htmlFor="bio">{t("profile.about")}</Label>
               <Textarea
                 id="bio"
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                placeholder="Viết vài dòng về bạn..."
+                placeholder={t("profile.bioPlaceholder")}
                 rows={3}
               />
             </div>
@@ -445,11 +447,11 @@ export default function EditProfileModal({
             onClick={() => onOpenChange(false)}
             disabled={loading}
           >
-            Hủy
+            {t("common.cancel")}
           </Button>
           <Button onClick={handleSave} disabled={loading || uploadingAvatar || uploadingCover}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Lưu thay đổi
+            {t("profile.saveChanges")}
           </Button>
         </div>
       </DialogContent>

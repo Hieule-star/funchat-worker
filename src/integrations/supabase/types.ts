@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      archived_conversations: {
+        Row: {
+          archived_at: string
+          conversation_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string
+          conversation_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string
+          conversation_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archived_conversations_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calls: {
         Row: {
           call_type: string

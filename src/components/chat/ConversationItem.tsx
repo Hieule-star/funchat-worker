@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { Check, CheckCheck, Image, Video, FileText, Mic, Users, Trash2 } from "lucide-react";
+import { Check, CheckCheck, Image, Video, FileText, Mic, Users, Trash2, Archive } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
   ContextMenu,
@@ -35,6 +35,7 @@ interface ConversationItemProps {
   onlineUsers?: Set<string>;
   typingUsers?: TypingUser[];
   onDelete?: (conversationId: string) => void;
+  onArchive?: (conversationId: string) => void;
 }
 
 export default function ConversationItem({
@@ -44,9 +45,15 @@ export default function ConversationItem({
   onlineUsers,
   typingUsers,
   onDelete,
+  onArchive,
 }: ConversationItemProps) {
   const { t } = useLanguage();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const handleArchiveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onArchive?.(conversation.id);
+  };
   const isGroup = conversation.is_group;
   const otherUser = !isGroup ? conversation.participants[0]?.profiles : null;
   const otherUserId = !isGroup ? conversation.participants[0]?.user_id : null;
@@ -256,6 +263,10 @@ export default function ConversationItem({
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent className="w-48">
+          <ContextMenuItem onClick={handleArchiveClick}>
+            <Archive className="h-4 w-4 mr-2" />
+            {t("chat.archiveChat")}
+          </ContextMenuItem>
           <ContextMenuItem 
             onClick={handleDeleteClick}
             className="text-destructive focus:text-destructive"

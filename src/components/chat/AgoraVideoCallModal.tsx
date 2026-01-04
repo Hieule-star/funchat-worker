@@ -1,11 +1,11 @@
 import { useEffect, useState, useRef } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Video, VideoOff, PhoneOff, Loader2, User, AlertCircle, CheckCircle2, Wifi, Monitor, MonitorOff, Circle } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, PhoneOff, Loader2, User, AlertCircle, CheckCircle2, Wifi, Monitor, MonitorOff } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAgoraCall } from "@/hooks/useAgoraCall";
-import { useCallRecording } from "@/hooks/useCallRecording";
 import { toast } from "sonner";
+
 interface AgoraVideoCallModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -40,8 +40,6 @@ export default function AgoraVideoCallModal({
   const isJoiningRef = useRef(false);
   const connectionTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const channelNameForRecording = `call-${conversationId}`;
-  
   const {
     localVideoRef,
     remoteVideoRef,
@@ -55,15 +53,6 @@ export default function AgoraVideoCallModal({
     remoteUsers,
     isScreenSharing,
   } = useAgoraCall();
-
-  const {
-    isRecording,
-    isLoading: isRecordingLoading,
-    formatDuration: formatRecordingDuration,
-    startRecording,
-    stopRecording,
-    cleanup: cleanupRecording,
-  } = useCallRecording(channelNameForRecording, mode);
 
   // Connection timer to track waiting time
   useEffect(() => {
@@ -115,7 +104,6 @@ export default function AgoraVideoCallModal({
     return () => {
       if (hasJoinedRef.current) {
         console.log('[AgoraModal] Cleanup: leaving channel');
-        cleanupRecording();
         leaveChannel();
         hasJoinedRef.current = false;
         isJoiningRef.current = false;
@@ -232,23 +220,7 @@ export default function AgoraVideoCallModal({
     }
   };
 
-  const handleToggleRecording = async () => {
-    try {
-      if (isRecording) {
-        await stopRecording();
-      } else {
-        await startRecording();
-      }
-    } catch (error) {
-      console.error('[AgoraModal] Recording toggle error:', error);
-      toast.error("Không thể thay đổi trạng thái ghi âm");
-    }
-  };
-
   const handleEndCall = async () => {
-    if (isRecording) {
-      await stopRecording();
-    }
     await leaveChannel();
     setCallStatus('ended');
     onOpenChange(false);
@@ -349,12 +321,6 @@ export default function AgoraVideoCallModal({
                 <span className="font-bold text-red-400">sharing</span>
               </div>
             )}
-            {isRecording && (
-              <div className="flex items-center gap-2">
-                <span className="text-gray-400">Recording:</span>
-                <span className="font-bold text-red-400">{formatRecordingDuration()}</span>
-              </div>
-            )}
           </div>
 
           {/* Controls */}
@@ -390,22 +356,6 @@ export default function AgoraVideoCallModal({
                 </Button>
               </>
             )}
-
-            {/* Recording Button */}
-            <Button
-              variant={isRecording ? "destructive" : "secondary"}
-              size="icon"
-              className="h-14 w-14 rounded-full relative"
-              onClick={handleToggleRecording}
-              disabled={isRecordingLoading}
-            >
-              <Circle className={`h-6 w-6 ${isRecording ? 'fill-current animate-pulse' : ''}`} />
-              {isRecording && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded">
-                  REC
-                </span>
-              )}
-            </Button>
 
             <Button
               variant="destructive"

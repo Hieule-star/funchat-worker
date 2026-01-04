@@ -1,4 +1,1 @@
 project_id = "jtldrssvklgokbmjkjoc"
-
-[functions.agora-recording]
-verify_jwt = false

@@ -1,10 +1,9 @@
 import { useEffect, useState, useRef } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Video, VideoOff, PhoneOff, Loader2, User, AlertCircle, CheckCircle2, Wifi, Users, Monitor, MonitorOff, Circle } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, PhoneOff, Loader2, User, AlertCircle, CheckCircle2, Wifi, Users, Monitor, MonitorOff } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useGroupAgoraCall } from "@/hooks/useGroupAgoraCall";
-import { useCallRecording } from "@/hooks/useCallRecording";
 import { toast } from "sonner";
 import { IAgoraRTCRemoteUser } from "agora-rtc-sdk-ng";
 
@@ -108,8 +107,6 @@ export default function GroupCallModal({
   const isJoiningRef = useRef(false);
   const connectionTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const channelNameForRecording = `group-call-${conversationId}`;
-
   const {
     localVideoRef,
     joinChannel,
@@ -123,15 +120,6 @@ export default function GroupCallModal({
     localUid,
     isScreenSharing,
   } = useGroupAgoraCall();
-
-  const {
-    isRecording,
-    isLoading: isRecordingLoading,
-    formatDuration: formatRecordingDuration,
-    startRecording,
-    stopRecording,
-    cleanup: cleanupRecording,
-  } = useCallRecording(channelNameForRecording, mode);
 
   // Connection timer
   useEffect(() => {
@@ -183,7 +171,6 @@ export default function GroupCallModal({
     return () => {
       if (hasJoinedRef.current) {
         console.log('[GroupCallModal] Cleanup: leaving channel');
-        cleanupRecording();
         leaveChannel();
         hasJoinedRef.current = false;
         isJoiningRef.current = false;
@@ -277,23 +264,7 @@ export default function GroupCallModal({
     }
   };
 
-  const handleToggleRecording = async () => {
-    try {
-      if (isRecording) {
-        await stopRecording();
-      } else {
-        await startRecording();
-      }
-    } catch (error) {
-      console.error('[GroupCallModal] Recording toggle error:', error);
-      toast.error("Không thể thay đổi trạng thái ghi âm");
-    }
-  };
-
   const handleEndCall = async () => {
-    if (isRecording) {
-      await stopRecording();
-    }
     await leaveChannel();
     hasJoinedRef.current = false;
     setCallStatus('ended');
@@ -451,22 +422,6 @@ export default function GroupCallModal({
               </>
             )}
 
-            {/* Recording Button */}
-            <Button
-              variant={isRecording ? "destructive" : "secondary"}
-              size="icon"
-              className="h-14 w-14 rounded-full relative"
-              onClick={handleToggleRecording}
-              disabled={isRecordingLoading}
-            >
-              <Circle className={`h-6 w-6 ${isRecording ? 'fill-current animate-pulse' : ''}`} />
-              {isRecording && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded">
-                  REC
-                </span>
-              )}
-            </Button>
-
             <Button
               variant="destructive"
               size="icon"
@@ -502,12 +457,6 @@ export default function GroupCallModal({
               <div className="flex items-center gap-2">
                 <span className="text-gray-400">Screen:</span>
                 <span className="font-bold text-red-400">sharing</span>
-              </div>
-            )}
-            {isRecording && (
-              <div className="flex items-center gap-2">
-                <span className="text-gray-400">Recording:</span>
-                <span className="font-bold text-red-400">{formatRecordingDuration()}</span>
               </div>
             )}
           </div>

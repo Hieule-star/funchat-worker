@@ -22,6 +22,8 @@ interface ChatHeaderProps {
   conversation: any;
   onVideoCall?: () => void;
   onVoiceCall?: () => void;
+  onGroupVideoCall?: () => void;
+  onGroupVoiceCall?: () => void;
   onBack?: () => void;
   onlineUsers?: Set<string>;
   typingUsers?: TypingUser[];
@@ -34,7 +36,9 @@ interface ChatHeaderProps {
 export default function ChatHeader({ 
   conversation, 
   onVideoCall, 
-  onVoiceCall, 
+  onVoiceCall,
+  onGroupVideoCall,
+  onGroupVoiceCall,
   onBack, 
   onlineUsers, 
   typingUsers,
@@ -156,9 +160,30 @@ export default function ChatHeader({
           </div>
         </div>
 
-        {/* Action buttons - hide call buttons for groups */}
+        {/* Action buttons */}
         <div className="flex items-center">
-          {!isGroup && (
+          {isGroup ? (
+            <>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={onGroupVideoCall} 
+                className="text-primary-foreground hover:bg-white/10"
+                title="Video call nhóm"
+              >
+                <Video className="h-5 w-5" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={onGroupVoiceCall} 
+                className="text-primary-foreground hover:bg-white/10"
+                title="Voice call nhóm"
+              >
+                <Phone className="h-5 w-5" />
+              </Button>
+            </>
+          ) : (
             <>
               <Button 
                 variant="ghost" 

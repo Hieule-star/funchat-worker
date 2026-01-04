@@ -6,6 +6,7 @@ import ChatHeader from "@/components/chat/ChatHeader";
 import MessageList from "@/components/chat/MessageList";
 import ChatInput from "@/components/chat/ChatInput";
 import AgoraVideoCallModal from "@/components/chat/AgoraVideoCallModal";
+import GroupCallModal from "@/components/chat/GroupCallModal";
 import DeviceSelectionModal from "@/components/chat/DeviceSelectionModal";
 import OutgoingCallModal from "@/components/chat/OutgoingCallModal";
 import { ForwardMessageModal } from "@/components/chat/ForwardMessageModal";
@@ -38,9 +39,16 @@ export default function Chat() {
   const [pinnedPanelOpen, setPinnedPanelOpen] = useState(false);
   const [wallpaperSelectorOpen, setWallpaperSelectorOpen] = useState(false);
   const [videoCallOpen, setVideoCallOpen] = useState(false);
+  const [groupCallOpen, setGroupCallOpen] = useState(false);
   const [deviceSelectionOpen, setDeviceSelectionOpen] = useState(false);
+  const [groupDeviceSelectionOpen, setGroupDeviceSelectionOpen] = useState(false);
   const [callMode, setCallMode] = useState<'video' | 'audio'>('video');
+  const [groupCallMode, setGroupCallMode] = useState<'video' | 'audio'>('video');
   const [selectedDevices, setSelectedDevices] = useState<{
+    videoDeviceId: string;
+    audioDeviceId: string;
+  } | null>(null);
+  const [groupSelectedDevices, setGroupSelectedDevices] = useState<{
     videoDeviceId: string;
     audioDeviceId: string;
   } | null>(null);
@@ -61,6 +69,7 @@ export default function Chat() {
   // Refs to track if user confirmed device selection (vs cancelled) - useRef for synchronous updates
   const callerConfirmedDevicesRef = useRef(false);
   const calleeConfirmedDevicesRef = useRef(false);
+  const groupConfirmedDevicesRef = useRef(false);
   
   const { typingUsers, setTyping } = useTypingIndicator(
     selectedConversation?.id,
@@ -598,6 +607,39 @@ export default function Chat() {
     });
   };
 
+  // Group call handlers
+  const handleGroupVideoCall = async () => {
+    if (!selectedConversation || !selectedConversation.is_group) return;
+    
+    const hasPermissions = await checkMediaPermissions('video');
+    if (!hasPermissions) return;
+    
+    setGroupCallMode('video');
+    setGroupDeviceSelectionOpen(true);
+  };
+
+  const handleGroupVoiceCall = async () => {
+    if (!selectedConversation || !selectedConversation.is_group) return;
+    
+    const hasPermissions = await checkMediaPermissions('audio');
+    if (!hasPermissions) return;
+    
+    setGroupCallMode('audio');
+    setGroupDeviceSelectionOpen(true);
+  };
+
+  const handleGroupDeviceConfirm = (devices: { videoDeviceId: string; audioDeviceId: string }) => {
+    groupConfirmedDevicesRef.current = true;
+    setGroupSelectedDevices(devices);
+    setGroupDeviceSelectionOpen(false);
+    setGroupCallOpen(true);
+    
+    toast({
+      title: groupCallMode === 'video' ? "Video call nhóm" : "Voice call nhóm",
+      description: "Đang kết nối cuộc gọi nhóm...",
+    });
+  };
+
 
   const handleTyping = (isTyping: boolean) => {
     if (profile) {
@@ -646,6 +688,8 @@ export default function Chat() {
               conversation={selectedConversation}
               onVideoCall={handleVideoCall}
               onVoiceCall={handleVoiceCall}
+              onGroupVideoCall={handleGroupVideoCall}
+              onGroupVoiceCall={handleGroupVoiceCall}
               onlineUsers={onlineUsers}
               typingUsers={typingUsers}
               pinnedCount={pinnedMessages.length}
@@ -791,6 +835,45 @@ export default function Chat() {
           mode={callMode}
           selectedVideoDeviceId={selectedDevices.videoDeviceId}
           selectedAudioDeviceId={selectedDevices.audioDeviceId}
+        />
+      )}
+
+      {/* Group device selection modal */}
+      {groupDeviceSelectionOpen && selectedConversation?.is_group && (
+        <DeviceSelectionModal
+          open={groupDeviceSelectionOpen}
+          onOpenChange={(open) => {
+            setGroupDeviceSelectionOpen(open);
+            if (!open && !groupConfirmedDevicesRef.current) {
+              // User cancelled
+            }
+            if (!open) {
+              groupConfirmedDevicesRef.current = false;
+            }
+          }}
+          onConfirm={handleGroupDeviceConfirm}
+          targetUsername={selectedConversation?.name || "Nhóm"}
+          mode={groupCallMode}
+        />
+      )}
+
+      {/* Group call modal */}
+      {groupCallOpen && selectedConversation?.is_group && groupSelectedDevices && (
+        <GroupCallModal
+          open={groupCallOpen}
+          onOpenChange={(open) => {
+            setGroupCallOpen(open);
+            if (!open) {
+              setGroupSelectedDevices(null);
+            }
+          }}
+          conversationId={selectedConversation.id}
+          groupName={selectedConversation.name || "Nhóm chưa có tên"}
+          groupAvatar={selectedConversation.group_avatar}
+          participants={selectedConversation.participants || []}
+          mode={groupCallMode}
+          selectedVideoDeviceId={groupSelectedDevices.videoDeviceId}
+          selectedAudioDeviceId={groupSelectedDevices.audioDeviceId}
         />
       )}
 

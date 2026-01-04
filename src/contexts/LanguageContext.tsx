@@ -247,6 +247,13 @@ const translations: Record<Language, Record<string, string>> = {
     "group.addFailed": "Không thể thêm thành viên",
     "group.add": "Thêm",
     "group.onlineMembers": "thành viên đang online",
+    "group.videoCall": "Video call nhóm",
+    "group.voiceCall": "Voice call nhóm",
+    "group.connecting": "Đang kết nối cuộc gọi nhóm...",
+    "group.waitingMembers": "Chờ thành viên tham gia...",
+    "group.callConnected": "người",
+    "group.callFailed": "Không thể kết nối cuộc gọi",
+    "group.callEnded": "Cuộc gọi đã kết thúc",
 
     // Common
     "common.save": "Lưu",
@@ -495,6 +502,13 @@ const translations: Record<Language, Record<string, string>> = {
     "group.addFailed": "Could not add member",
     "group.add": "Add",
     "group.onlineMembers": "members online",
+    "group.videoCall": "Group video call",
+    "group.voiceCall": "Group voice call",
+    "group.connecting": "Connecting to group call...",
+    "group.waitingMembers": "Waiting for members to join...",
+    "group.callConnected": "people",
+    "group.callFailed": "Could not connect to call",
+    "group.callEnded": "Call ended",
 
     // Common
     "common.save": "Save",

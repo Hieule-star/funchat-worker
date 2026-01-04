@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -35,6 +36,7 @@ type AuthMethod = "email" | "phone";
 
 export default function Auth() {
   const { user, signUp, signIn, signInWithPhone, verifyOtp, signInWithGoogle, signInWithFacebook, resendEmailVerification, resetPassword } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -132,21 +134,21 @@ export default function Auth() {
       if (error) {
         if (error.message.includes("already registered")) {
           toast({
-            title: "Email đã tồn tại",
-            description: "Email này đã được đăng ký. Vui lòng đăng nhập hoặc sử dụng email khác.",
+            title: t("auth.emailExists"),
+            description: t("auth.emailExistsDesc"),
             variant: "destructive",
           });
         } else {
           toast({
-            title: "Lỗi đăng ký",
+            title: t("auth.registerError"),
             description: error.message,
             variant: "destructive",
           });
         }
       } else {
         toast({
-          title: "Đăng ký thành công!",
-          description: "Vui lòng kiểm tra email để xác nhận tài khoản.",
+          title: t("auth.registerSuccess"),
+          description: t("auth.registerSuccessDesc"),
         });
         setSignUpEmail("");
         setSignUpUsername("");
@@ -155,7 +157,7 @@ export default function Auth() {
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast({
-          title: "Lỗi validation",
+          title: t("auth.validationError"),
           description: error.errors[0].message,
           variant: "destructive",
         });
@@ -183,13 +185,13 @@ export default function Auth() {
           setUnverifiedEmail(validated.email);
         } else if (error.message.includes("Invalid login credentials")) {
           toast({
-            title: "Thông tin đăng nhập không đúng",
-            description: "Email hoặc mật khẩu không chính xác. Vui lòng thử lại.",
+            title: t("auth.invalidCredentials"),
+            description: t("auth.invalidCredentialsDesc"),
             variant: "destructive",
           });
         } else {
           toast({
-            title: "Lỗi đăng nhập",
+            title: t("auth.loginError"),
             description: error.message,
             variant: "destructive",
           });
@@ -198,7 +200,7 @@ export default function Auth() {
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast({
-          title: "Lỗi validation",
+          title: t("auth.validationError"),
           description: error.errors[0].message,
           variant: "destructive",
         });
@@ -221,21 +223,21 @@ export default function Auth() {
       if (error) {
         if (error.message.includes("Phone provider is not enabled")) {
           toast({
-            title: "Chưa kích hoạt SMS",
-            description: "Vui lòng liên hệ quản trị viên để kích hoạt đăng nhập bằng số điện thoại.",
+            title: t("auth.smsNotEnabled"),
+            description: t("auth.smsNotEnabledDesc"),
             variant: "destructive",
           });
         } else {
           toast({
-            title: "Lỗi gửi OTP",
+            title: t("auth.otpError"),
             description: error.message,
             variant: "destructive",
           });
         }
       } else {
         toast({
-          title: "Đã gửi mã OTP",
-          description: `Mã xác thực đã được gửi đến ${fullPhone}`,
+          title: t("auth.otpSent"),
+          description: `${t("auth.otpSentDesc")} ${fullPhone}`,
         });
         setShowOtpInput(true);
         setOtpCountdown(60);
@@ -243,7 +245,7 @@ export default function Auth() {
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast({
-          title: "Lỗi",
+          title: t("common.error"),
           description: error.errors[0].message,
           variant: "destructive",
         });
@@ -256,8 +258,8 @@ export default function Auth() {
   const handleVerifyOtp = async () => {
     if (otpCode.length !== 6) {
       toast({
-        title: "Mã OTP không hợp lệ",
-        description: "Vui lòng nhập đủ 6 số",
+        title: t("auth.otpInvalid"),
+        description: t("auth.otpInvalidDesc"),
         variant: "destructive",
       });
       return;
@@ -270,14 +272,14 @@ export default function Auth() {
 
     if (error) {
       toast({
-        title: "Mã OTP không đúng",
-        description: "Vui lòng kiểm tra lại mã xác thực",
+        title: t("auth.otpWrong"),
+        description: t("auth.otpWrongDesc"),
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Đăng nhập thành công!",
-        description: "Chào mừng bạn đến với Fun Chat WEB3",
+        title: t("auth.loginSuccess"),
+        description: t("auth.loginSuccessDesc"),
       });
     }
     setLoading(false);
@@ -295,19 +297,19 @@ export default function Auth() {
     if (error) {
       if (error.message.includes("provider is not enabled")) {
         toast({
-          title: "Google Sign-In chưa được kích hoạt",
-          description: "Vui lòng liên hệ quản trị viên để kích hoạt đăng nhập bằng Google.",
+          title: t("auth.googleNotEnabled"),
+          description: t("auth.googleNotEnabledDesc"),
           variant: "destructive",
         });
       } else if (error.message.includes("OAuth state parameter missing")) {
         toast({
-          title: "Lỗi cấu hình OAuth",
-          description: "Vui lòng kiểm tra cấu hình redirect URL trong Supabase.",
+          title: t("auth.oauthError"),
+          description: t("auth.oauthErrorDesc"),
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Lỗi đăng nhập Google",
+          title: t("auth.googleError"),
           description: error.message,
           variant: "destructive",
         });
@@ -323,19 +325,19 @@ export default function Auth() {
     if (error) {
       if (error.message.includes("provider is not enabled")) {
         toast({
-          title: "Facebook Login chưa được kích hoạt",
-          description: "Vui lòng liên hệ quản trị viên để kích hoạt đăng nhập bằng Facebook.",
+          title: t("auth.facebookNotEnabled"),
+          description: t("auth.facebookNotEnabledDesc"),
           variant: "destructive",
         });
       } else if (error.message.includes("OAuth state parameter missing")) {
         toast({
-          title: "Lỗi cấu hình OAuth",
-          description: "Vui lòng kiểm tra cấu hình redirect URL trong Supabase.",
+          title: t("auth.oauthError"),
+          description: t("auth.oauthErrorDesc"),
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Lỗi đăng nhập Facebook",
+          title: t("auth.facebookError"),
           description: error.message,
           variant: "destructive",
         });
@@ -347,7 +349,7 @@ export default function Auth() {
   const handleTelegramSignIn = () => {
     toast({
       title: "Telegram Login",
-      description: "Tính năng đăng nhập Telegram đang được phát triển.",
+      description: t("auth.telegramDev"),
     });
   };
 
@@ -359,14 +361,14 @@ export default function Auth() {
     
     if (error) {
       toast({
-        title: "Lỗi gửi email",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Email đã được gửi",
-        description: "Vui lòng kiểm tra hộp thư của bạn.",
+        title: t("auth.emailSent"),
+        description: t("auth.emailSentDesc"),
       });
     }
     setLoading(false);
@@ -379,10 +381,10 @@ export default function Auth() {
         <Card className="w-full max-w-md p-8 space-y-6 border-2 text-center">
           <CheckCircle2 className="mx-auto h-16 w-16 text-green-500" />
           <h2 className="text-2xl font-bold text-green-600">
-            🎉 Email đã được xác nhận thành công!
+            🎉 {t("auth.emailConfirmed")}
           </h2>
           <p className="text-muted-foreground">
-            Đang chuyển bạn vào Fun Chat WEB3...
+            {t("auth.redirecting")}
           </p>
           <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
         </Card>
@@ -402,9 +404,9 @@ export default function Auth() {
               className="w-20 h-20 mx-auto rounded-full shadow-lg"
             />
             <div className="space-y-2">
-              <h1 className="text-2xl font-bold">Nhập mã xác thực</h1>
+              <h1 className="text-2xl font-bold">{t("auth.enterOtp")}</h1>
               <p className="text-muted-foreground text-sm">
-                Mã OTP đã được gửi đến {countryCode}{phoneNumber}
+                {t("auth.otpSentTo")} {countryCode}{phoneNumber}
               </p>
             </div>
           </div>
@@ -434,16 +436,16 @@ export default function Auth() {
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Đang xác thực...
+                {t("auth.verifying")}
               </>
             ) : (
-              "Xác nhận"
+              t("auth.verify")
             )}
           </Button>
 
           <div className="text-center space-y-2">
             <p className="text-sm text-muted-foreground">
-              Chưa nhận được mã?
+              {t("auth.noOtp")}
             </p>
             <Button
               variant="link"
@@ -452,8 +454,8 @@ export default function Auth() {
               className="text-primary"
             >
               {otpCountdown > 0 
-                ? `Gửi lại sau ${otpCountdown}s` 
-                : "Gửi lại mã OTP"}
+                ? `${t("auth.resendAfter")} ${otpCountdown}s` 
+                : t("auth.resendOtp")}
             </Button>
           </div>
 
@@ -465,7 +467,7 @@ export default function Auth() {
               setOtpCode("");
             }}
           >
-            ← Quay lại
+            ← {t("auth.back")}
           </Button>
         </Card>
       </div>
@@ -483,10 +485,10 @@ export default function Auth() {
           />
           <div className="space-y-2">
             <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Fun Chat WEB3
+              {t("auth.welcome")}
             </h1>
             <p className="text-muted-foreground">
-              Kết nối và chia sẻ với bạn bè
+              {t("auth.welcomeDesc")}
             </p>
           </div>
         </div>
@@ -502,7 +504,7 @@ export default function Auth() {
             }`}
           >
             <Mail className="h-4 w-4" />
-            Email
+            {t("auth.emailMethod")}
           </button>
           <button
             onClick={() => setAuthMethod("phone")}
@@ -513,7 +515,7 @@ export default function Auth() {
             }`}
           >
             <Phone className="h-4 w-4" />
-            Số điện thoại
+            {t("auth.phoneMethod")}
           </button>
         </div>
 
@@ -522,9 +524,9 @@ export default function Auth() {
           <Alert className="border-amber-500/50 bg-amber-500/10">
             <AlertCircle className="h-4 w-4 text-amber-500" />
             <AlertDescription className="text-sm">
-              <strong>Email của bạn chưa được xác nhận.</strong>
+              <strong>{t("auth.emailNotVerified")}</strong>
               <br />
-              Vui lòng kiểm tra hộp thư và nhấp vào link xác nhận.
+              {t("auth.emailNotVerifiedDesc")}
               <Button 
                 variant="link" 
                 size="sm"
@@ -532,7 +534,7 @@ export default function Auth() {
                 onClick={handleResendEmail}
                 disabled={loading}
               >
-                Gửi lại email
+                {t("auth.resendEmail")}
               </Button>
             </AlertDescription>
           </Alert>
@@ -542,7 +544,7 @@ export default function Auth() {
         {authMethod === "phone" && (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="phone">Số điện thoại</Label>
+              <Label htmlFor="phone">{t("auth.phone")}</Label>
               <div className="flex gap-2">
                 <select
                   value={countryCode}
@@ -573,10 +575,10 @@ export default function Auth() {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Đang gửi...
+                  {t("auth.sending")}
                 </>
               ) : (
-                "Nhận mã OTP"
+                t("auth.receiveOtp")
               )}
             </Button>
           </div>
@@ -586,7 +588,7 @@ export default function Auth() {
         {authMethod === "email" && authView === "signin" && (
           <form onSubmit={handleSignIn} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="signin-email">Email</Label>
+              <Label htmlFor="signin-email">{t("auth.email")}</Label>
               <Input
                 id="signin-email"
                 type="email"
@@ -600,13 +602,13 @@ export default function Auth() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="signin-password">Mật khẩu</Label>
+                <Label htmlFor="signin-password">{t("auth.password")}</Label>
                 <button
                   type="button"
                   onClick={() => setAuthView("forgot-password")}
                   className="text-xs text-primary hover:underline"
                 >
-                  Quên mật khẩu?
+                  {t("auth.forgotPassword")}
                 </button>
               </div>
               <PasswordInput
@@ -623,21 +625,21 @@ export default function Auth() {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Đang đăng nhập...
+                  {t("auth.loggingIn")}
                 </>
               ) : (
-                "Đăng nhập"
+                t("auth.signIn")
               )}
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
-              Nếu chưa có tài khoản, vui lòng{" "}
+              {t("auth.noAccount")}{" "}
               <button
                 type="button"
                 onClick={() => setAuthView("signup")}
                 className="text-primary font-medium hover:underline"
               >
-                Đăng ký
+                {t("auth.signUp")}
               </button>
             </p>
           </form>
@@ -655,14 +657,14 @@ export default function Auth() {
               
               if (error) {
                 toast({
-                  title: "Lỗi",
+                  title: t("common.error"),
                   description: error.message,
                   variant: "destructive",
                 });
               } else {
                 toast({
-                  title: "Đã gửi email",
-                  description: "Vui lòng kiểm tra hộp thư để đặt lại mật khẩu.",
+                  title: t("auth.emailSent"),
+                  description: t("auth.emailSentDesc"),
                 });
                 setForgotPasswordEmail("");
                 setAuthView("signin");
@@ -672,14 +674,14 @@ export default function Auth() {
             className="space-y-4"
           >
             <div className="text-center space-y-2 mb-4">
-              <h2 className="text-lg font-semibold">Quên mật khẩu?</h2>
+              <h2 className="text-lg font-semibold">{t("auth.resetPassword")}</h2>
               <p className="text-sm text-muted-foreground">
-                Nhập email của bạn để nhận link đặt lại mật khẩu
+                {t("auth.resetPasswordDesc")}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="forgot-email">Email</Label>
+              <Label htmlFor="forgot-email">{t("auth.email")}</Label>
               <Input
                 id="forgot-email"
                 type="email"
@@ -695,10 +697,10 @@ export default function Auth() {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Đang gửi...
+                  {t("auth.sending")}
                 </>
               ) : (
-                "Gửi email đặt lại mật khẩu"
+                t("auth.sendResetLink")
               )}
             </Button>
 
@@ -708,7 +710,7 @@ export default function Auth() {
                 onClick={() => setAuthView("signin")}
                 className="text-primary font-medium hover:underline"
               >
-                ← Quay lại đăng nhập
+                ← {t("auth.backToLogin")}
               </button>
             </p>
           </form>
@@ -718,7 +720,7 @@ export default function Auth() {
         {authMethod === "email" && authView === "signup" && (
           <form onSubmit={handleSignUp} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="signup-email">Email</Label>
+              <Label htmlFor="signup-email">{t("auth.email")}</Label>
               <Input
                 id="signup-email"
                 type="email"
@@ -731,7 +733,7 @@ export default function Auth() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="signup-username">Username</Label>
+              <Label htmlFor="signup-username">{t("auth.username")}</Label>
               <Input
                 id="signup-username"
                 type="text"
@@ -744,7 +746,7 @@ export default function Auth() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="signup-password">Mật khẩu</Label>
+              <Label htmlFor="signup-password">{t("auth.password")}</Label>
               <PasswordInput
                 id="signup-password"
                 placeholder="••••••••"
@@ -760,21 +762,21 @@ export default function Auth() {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Đang đăng ký...
+                  {t("auth.registering")}
                 </>
               ) : (
-                "Đăng ký"
+                t("auth.signUp")
               )}
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
-              Đã có tài khoản?{" "}
+              {t("auth.hasAccount")}{" "}
               <button
                 type="button"
                 onClick={() => setAuthView("signin")}
                 className="text-primary font-medium hover:underline"
               >
-                Đăng nhập
+                {t("auth.signIn")}
               </button>
             </p>
           </form>
@@ -787,7 +789,7 @@ export default function Auth() {
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-card px-2 text-muted-foreground">
-              Hoặc tiếp tục với
+              {t("auth.continueWith")}
             </span>
           </div>
         </div>
@@ -802,7 +804,7 @@ export default function Auth() {
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Đang chuyển hướng...
+                {t("auth.redirectingTo")}
               </>
             ) : (
               <>
@@ -824,7 +826,7 @@ export default function Auth() {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                   />
                 </svg>
-                Đăng nhập với Google
+                {t("auth.signInWithGoogle")}
               </>
             )}
           </Button>
@@ -838,14 +840,14 @@ export default function Auth() {
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Đang chuyển hướng...
+                {t("auth.redirectingTo")}
               </>
             ) : (
               <>
                 <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="#1877F2">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                 </svg>
-                Đăng nhập với Facebook
+                {t("auth.signInWithFacebook")}
               </>
             )}
           </Button>
@@ -859,7 +861,7 @@ export default function Auth() {
             <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="#0088CC">
               <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.5 1.201-.82 1.23-.697.064-1.226-.461-1.901-.903-1.056-.693-1.653-1.124-2.678-1.8-1.185-.781-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.139-5.062 3.345-.479.329-.913.489-1.302.481-.428-.009-1.252-.242-1.865-.442-.752-.244-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.831-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
             </svg>
-            Đăng nhập với Telegram
+            {t("auth.signInWithTelegram")}
           </Button>
         </div>
       </Card>

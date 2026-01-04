@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import NewConversationModal from "./NewConversationModal";
 import CreateGroupModal from "./CreateGroupModal";
+import { toast } from "sonner";
 
 interface ChatSidebarProps {
   selectedConversation: any;
@@ -36,6 +37,7 @@ export default function ChatSidebar({
   const { onlineUsers } = usePresence(user?.id);
   const { messageNotificationEnabled, toggleMessageNotification } = useSoundSettings();
   const [conversations, setConversations] = useState<any[]>([]);
+  const [deletedConversationIds, setDeletedConversationIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [showNewConversationModal, setShowNewConversationModal] = useState(false);
@@ -44,6 +46,20 @@ export default function ChatSidebar({
   // Get typing state for all conversations
   const conversationIds = conversations.map(c => c.id);
   const { getTypingUsers } = useConversationsTyping(conversationIds, user?.id);
+
+  // Fetch deleted conversation IDs
+  const fetchDeletedConversations = useCallback(async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from("deleted_conversations")
+      .select("conversation_id")
+      .eq("user_id", user.id);
+    
+    if (data) {
+      setDeletedConversationIds(new Set(data.map(d => d.conversation_id)));
+    }
+  }, [user]);
 
   // Extracted fetchConversations to be callable from handleConversationCreated
   const fetchConversations = useCallback(async () => {
@@ -113,10 +129,35 @@ export default function ChatSidebar({
     }
   }, [user]);
 
+  // Handle delete conversation (soft delete)
+  const handleDeleteConversation = async (conversationId: string) => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("deleted_conversations")
+      .insert({ user_id: user.id, conversation_id: conversationId });
+
+    if (error) {
+      toast.error(t("chat.deleteChatError"));
+      return;
+    }
+
+    toast.success(t("chat.deleteChatSuccess"));
+    
+    // Update local state immediately
+    setDeletedConversationIds(prev => new Set([...prev, conversationId]));
+    
+    // If currently selected conversation is deleted, deselect it
+    if (selectedConversation?.id === conversationId) {
+      onSelectConversation(null);
+    }
+  };
+
   useEffect(() => {
     if (!user) return;
 
     fetchConversations();
+    fetchDeletedConversations();
 
     // Subscribe to conversations, participants, and messages changes
     const channel = supabase
@@ -147,9 +188,24 @@ export default function ChatSidebar({
           schema: "public",
           table: "messages",
         },
-        (payload) => {
+        async (payload) => {
           // Only refetch on INSERT or when is_read changes to true (someone read a message)
           if (payload.eventType === 'INSERT') {
+            const newMessage = payload.new as any;
+            // Auto-restore conversation if it was deleted and a new message arrives
+            if (deletedConversationIds.has(newMessage.conversation_id)) {
+              await supabase
+                .from("deleted_conversations")
+                .delete()
+                .eq("user_id", user.id)
+                .eq("conversation_id", newMessage.conversation_id);
+              
+              setDeletedConversationIds(prev => {
+                const next = new Set(prev);
+                next.delete(newMessage.conversation_id);
+                return next;
+              });
+            }
             fetchConversations();
           } else if (payload.eventType === 'UPDATE') {
             const newRecord = payload.new as any;
@@ -166,7 +222,7 @@ export default function ChatSidebar({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchConversations]);
+  }, [user, fetchConversations, fetchDeletedConversations, deletedConversationIds]);
 
   const handleConversationCreated = async (conversationId: string) => {
     // Refetch all conversations to update the sidebar
@@ -198,16 +254,21 @@ export default function ChatSidebar({
     }
   };
 
-  const filteredConversations = conversations.filter((conv) => {
-    // For group chats, search by group name
-    if (conv.is_group) {
-      return conv.name?.toLowerCase().includes(searchQuery.toLowerCase());
-    }
-    // For 1-1 chats, search by participant name
-    return conv.participants.some((p: any) =>
-      p.profiles?.username?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  });
+  const filteredConversations = conversations
+    // Filter out deleted conversations
+    .filter((conv) => !deletedConversationIds.has(conv.id))
+    // Then apply search filter
+    .filter((conv) => {
+      if (!searchQuery) return true;
+      // For group chats, search by group name
+      if (conv.is_group) {
+        return conv.name?.toLowerCase().includes(searchQuery.toLowerCase());
+      }
+      // For 1-1 chats, search by participant name
+      return conv.participants.some((p: any) =>
+        p.profiles?.username?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    });
 
   return (
     <div className="w-80 border-r border-border bg-[hsl(var(--wa-sidebar-bg))] flex flex-col">
@@ -326,6 +387,7 @@ export default function ChatSidebar({
               }}
               onlineUsers={onlineUsers}
               typingUsers={getTypingUsers(conversation.id)}
+              onDelete={handleDeleteConversation}
             />
           ))
         )}

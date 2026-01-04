@@ -2,7 +2,25 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { Check, CheckCheck, Image, Video, FileText, Mic, Users } from "lucide-react";
+import { Check, CheckCheck, Image, Video, FileText, Mic, Users, Trash2 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useState } from "react";
 
 interface TypingUser {
   userId: string;
@@ -16,6 +34,7 @@ interface ConversationItemProps {
   onClick: () => void;
   onlineUsers?: Set<string>;
   typingUsers?: TypingUser[];
+  onDelete?: (conversationId: string) => void;
 }
 
 export default function ConversationItem({
@@ -24,7 +43,10 @@ export default function ConversationItem({
   onClick,
   onlineUsers,
   typingUsers,
+  onDelete,
 }: ConversationItemProps) {
+  const { t } = useLanguage();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const isGroup = conversation.is_group;
   const otherUser = !isGroup ? conversation.participants[0]?.profiles : null;
   const otherUserId = !isGroup ? conversation.participants[0]?.user_id : null;
@@ -141,83 +163,128 @@ export default function ConversationItem({
     );
   };
 
-  return (
-    <div
-      onClick={onClick}
-      className={cn(
-        "flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-border/50",
-        isSelected 
-          ? "bg-muted" 
-          : "hover:bg-muted/50"
-      )}
-    >
-      {/* Avatar with online indicator */}
-      <div className="relative flex-shrink-0">
-        {getAvatarContent()}
-        {!isGroup && isOnline ? (
-          <span className="absolute bottom-0 right-0 h-3.5 w-3.5 bg-[hsl(var(--wa-light-green))] border-2 border-card rounded-full" />
-        ) : !isGroup && otherUser?.last_seen && (
-          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] text-muted-foreground whitespace-nowrap bg-card px-1 rounded">
-            {formatLastSeen()}
-          </span>
-        )}
-      </div>
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDeleteDialog(true);
+  };
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between mb-0.5">
-          <h3 className="font-semibold text-[15px] truncate text-foreground">
-            {getDisplayName()}
-          </h3>
-          <span className={cn(
-            "text-xs flex-shrink-0 ml-2",
-            unreadCount > 0 ? "text-[hsl(var(--wa-light-green))] font-medium" : "text-muted-foreground"
-          )}>
-            {formatTime()}
-          </span>
-        </div>
-        
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-sm text-muted-foreground truncate flex items-center gap-1">
-            {isTyping ? (
-              <>
-                <span className="text-[hsl(var(--wa-light-green))] italic">
-                  {isGroup && typingUsers?.[0]?.username 
-                    ? `${typingUsers[0].username} đang nhập` 
-                    : "đang nhập"}
+  const handleConfirmDelete = () => {
+    onDelete?.(conversation.id);
+    setShowDeleteDialog(false);
+  };
+
+  return (
+    <>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div
+            onClick={onClick}
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-border/50",
+              isSelected 
+                ? "bg-muted" 
+                : "hover:bg-muted/50"
+            )}
+          >
+            {/* Avatar with online indicator */}
+            <div className="relative flex-shrink-0">
+              {getAvatarContent()}
+              {!isGroup && isOnline ? (
+                <span className="absolute bottom-0 right-0 h-3.5 w-3.5 bg-[hsl(var(--wa-light-green))] border-2 border-card rounded-full" />
+              ) : !isGroup && otherUser?.last_seen && (
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] text-muted-foreground whitespace-nowrap bg-card px-1 rounded">
+                  {formatLastSeen()}
                 </span>
-                <span className="flex gap-0.5 ml-0.5">
-                  <span className="w-1 h-1 bg-[hsl(var(--wa-light-green))] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-1 h-1 bg-[hsl(var(--wa-light-green))] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-1 h-1 bg-[hsl(var(--wa-light-green))] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              )}
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-0.5">
+                <h3 className="font-semibold text-[15px] truncate text-foreground">
+                  {getDisplayName()}
+                </h3>
+                <span className={cn(
+                  "text-xs flex-shrink-0 ml-2",
+                  unreadCount > 0 ? "text-[hsl(var(--wa-light-green))] font-medium" : "text-muted-foreground"
+                )}>
+                  {formatTime()}
                 </span>
-              </>
-            ) : (
-              <>
-                {/* Show tick for sent messages */}
-                {lastMessage && !isGroup && (
-                  <CheckCheck className="h-4 w-4 text-[hsl(var(--wa-double-tick))] flex-shrink-0" />
-                )}
-                <span className="truncate">{getMessagePreview()}</span>
-              </>
-            )}
-          </p>
-          
-          {/* Group online count or unread badge */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {isGroup && onlineCount > 0 && (
-              <span className="text-xs text-muted-foreground">
-                {onlineCount} online
-              </span>
-            )}
-            {unreadCount > 0 && (
-              <span className="h-5 min-w-5 px-1.5 flex items-center justify-center text-xs font-semibold bg-[hsl(var(--wa-light-green))] text-white rounded-full">
-                {unreadCount}
-              </span>
-            )}
+              </div>
+              
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm text-muted-foreground truncate flex items-center gap-1">
+                  {isTyping ? (
+                    <>
+                      <span className="text-[hsl(var(--wa-light-green))] italic">
+                        {isGroup && typingUsers?.[0]?.username 
+                          ? `${typingUsers[0].username} đang nhập` 
+                          : "đang nhập"}
+                      </span>
+                      <span className="flex gap-0.5 ml-0.5">
+                        <span className="w-1 h-1 bg-[hsl(var(--wa-light-green))] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-1 h-1 bg-[hsl(var(--wa-light-green))] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-1 h-1 bg-[hsl(var(--wa-light-green))] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      {/* Show tick for sent messages */}
+                      {lastMessage && !isGroup && (
+                        <CheckCheck className="h-4 w-4 text-[hsl(var(--wa-double-tick))] flex-shrink-0" />
+                      )}
+                      <span className="truncate">{getMessagePreview()}</span>
+                    </>
+                  )}
+                </p>
+                
+                {/* Group online count or unread badge */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {isGroup && onlineCount > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      {onlineCount} online
+                    </span>
+                  )}
+                  {unreadCount > 0 && (
+                    <span className="h-5 min-w-5 px-1.5 flex items-center justify-center text-xs font-semibold bg-[hsl(var(--wa-light-green))] text-white rounded-full">
+                      {unreadCount}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent className="w-48">
+          <ContextMenuItem 
+            onClick={handleDeleteClick}
+            className="text-destructive focus:text-destructive"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            {t("chat.deleteChat")}
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("chat.deleteChat")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("chat.deleteChatConfirm")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

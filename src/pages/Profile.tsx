@@ -17,6 +17,7 @@ import { ReputationBar } from "@/components/profile/ReputationBar";
 import { BadgesSection } from "@/components/profile/BadgesSection";
 import { SocialLinks } from "@/components/profile/SocialLinks";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -53,6 +54,7 @@ interface ActivityItem {
 
 export default function Profile() {
   const { user, profile: authProfile } = useAuth();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [stats, setStats] = useState<StatsData>({
@@ -109,8 +111,8 @@ export default function Profile() {
     } catch (error) {
       console.error("Error fetching user data:", error);
       toast({
-        title: "Lỗi",
-        description: "Không thể tải dữ liệu profile",
+        title: t("common.error"),
+        description: t("profile.loadError"),
         variant: "destructive",
       });
     } finally {
@@ -144,7 +146,7 @@ export default function Profile() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="p-6">
-          <p className="text-muted-foreground">Vui lòng đăng nhập để xem profile</p>
+          <p className="text-muted-foreground">{t("profile.pleaseLogin")}</p>
         </Card>
       </div>
     );
@@ -174,9 +176,9 @@ export default function Profile() {
           {/* Stats Cards */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             {[
-              { icon: Users, label: "Bạn bè", value: stats.friendsCount, color: "text-blue-500" },
-              { icon: MessageSquare, label: "Tin nhắn", value: stats.messagesCount, color: "text-primary" },
-              { icon: Heart, label: "Cuộc gọi", value: 0, color: "text-red-500" },
+              { icon: Users, label: t("profile.friends"), value: stats.friendsCount, color: "text-blue-500" },
+              { icon: MessageSquare, label: t("profile.messages"), value: stats.messagesCount, color: "text-primary" },
+              { icon: Heart, label: t("profile.calls"), value: 0, color: "text-red-500" },
             ].map((stat, index) => {
               const Icon = stat.icon;
               return (
@@ -196,15 +198,15 @@ export default function Profile() {
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="overview" className="gap-1 text-xs sm:text-sm">
                 <LayoutGrid className="h-4 w-4" />
-                <span className="hidden sm:inline">Tổng quan</span>
+                <span className="hidden sm:inline">{t("profile.overview")}</span>
               </TabsTrigger>
               <TabsTrigger value="friends" className="gap-1 text-xs sm:text-sm">
                 <Users className="h-4 w-4" />
-                <span className="hidden sm:inline">Bạn bè</span>
+                <span className="hidden sm:inline">{t("profile.friends")}</span>
               </TabsTrigger>
               <TabsTrigger value="badges" className="gap-1 text-xs sm:text-sm">
                 <Award className="h-4 w-4" />
-                <span className="hidden sm:inline">Huy hiệu</span>
+                <span className="hidden sm:inline">{t("profile.badges")}</span>
               </TabsTrigger>
             </TabsList>
 
@@ -216,7 +218,7 @@ export default function Profile() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Activity className="h-5 w-5 text-primary" />
-                      Liên kết xã hội
+                      {t("profile.socialLinks")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -235,21 +237,21 @@ export default function Profile() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <FileText className="h-5 w-5 text-primary" />
-                      Giới thiệu
+                      {t("profile.about")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-muted-foreground">
-                      {profileData.bio || "Chưa có thông tin giới thiệu"}
+                      {profileData.bio || t("profile.noBio")}
                     </p>
                     {profileData.job_title && (
                       <p className="mt-2 text-sm">
-                        <span className="font-medium">Công việc:</span> {profileData.job_title}
+                        <span className="font-medium">{t("profile.job")}:</span> {profileData.job_title}
                       </p>
                     )}
                     {profileData.location && (
                       <p className="text-sm">
-                        <span className="font-medium">Địa điểm:</span> {profileData.location}
+                        <span className="font-medium">{t("profile.location")}:</span> {profileData.location}
                       </p>
                     )}
                   </CardContent>
@@ -262,9 +264,9 @@ export default function Profile() {
               <Card className="border-primary/20">
                 <CardContent className="py-12 text-center">
                   <Users className="h-12 w-12 mx-auto mb-2 text-muted-foreground opacity-50" />
-                  <p className="text-muted-foreground mb-4">Quản lý bạn bè</p>
+                  <p className="text-muted-foreground mb-4">{t("friends.manageFriends")}</p>
                   <a href="/friends" className="text-primary hover:underline">
-                    Xem danh sách bạn bè →
+                    {t("friends.viewFriends")} →
                   </a>
                 </CardContent>
               </Card>

@@ -6,6 +6,7 @@ import { UserPlus, Users, Search, Loader2, UserCheck, MessageCircle } from "luci
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
 import UserSearchCard from "@/components/friends/UserSearchCard";
 import FriendRequestCard from "@/components/friends/FriendRequestCard";
@@ -32,6 +33,7 @@ interface FriendRequest {
 
 export default function Friends() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -150,8 +152,8 @@ export default function Friends() {
     } catch (error) {
       console.error("Error searching users:", error);
       toast({
-        title: "Lỗi",
-        description: "Không thể tìm kiếm người dùng",
+        title: t("common.error"),
+        description: t("friends.searchError"),
         variant: "destructive",
       });
     } finally {
@@ -213,7 +215,7 @@ export default function Friends() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-2xl">
                 <Users className="h-6 w-6 text-primary" />
-                Danh bạ
+                {t("friends.title")}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -221,16 +223,16 @@ export default function Friends() {
           {/* Tabs */}
           <Tabs defaultValue="search" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="search">Tìm kiếm</TabsTrigger>
+              <TabsTrigger value="search">{t("friends.search")}</TabsTrigger>
               <TabsTrigger value="requests" className="relative">
-                Lời mời
+                {t("friends.requests")}
                 {friendRequests.length > 0 && (
                   <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs text-destructive-foreground">
                     {friendRequests.length}
                   </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="friends">Danh sách ({friends.length})</TabsTrigger>
+              <TabsTrigger value="friends">{t("friends.list")} ({friends.length})</TabsTrigger>
             </TabsList>
 
             {/* Search Tab */}
@@ -239,7 +241,7 @@ export default function Friends() {
                 <CardContent className="pt-6">
                   <div className="flex gap-2">
                     <Input
-                      placeholder="Tìm kiếm theo tên..."
+                      placeholder={t("friends.searchPlaceholder")}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onKeyPress={(e) => e.key === "Enter" && handleSearch()}
@@ -261,7 +263,7 @@ export default function Friends() {
                     <UserSearchCard
                       key={user.id}
                       userId={user.id}
-                      username={user.username || "Người dùng"}
+                      username={user.username || t("common.user")}
                       avatarUrl={user.avatar_url}
                       bio={user.bio}
                       friendshipStatus={friendshipsMap.get(user.id) as any}
@@ -271,14 +273,13 @@ export default function Friends() {
                 ) : searchQuery && !loading ? (
                   <Card>
                     <CardContent className="py-12 text-center">
-                      <p className="text-muted-foreground">Không tìm thấy người dùng</p>
+                      <p className="text-muted-foreground">{t("friends.noResults")}</p>
                     </CardContent>
                   </Card>
                 ) : null}
               </div>
             </TabsContent>
 
-            {/* Friend Requests Tab */}
             <TabsContent value="requests" className="space-y-3 mt-6">
               {friendRequests.length > 0 ? (
                 friendRequests.map((request) => (
@@ -286,7 +287,7 @@ export default function Friends() {
                     key={request.id}
                     requestId={request.id}
                     userId={request.user_id}
-                    username={request.user_profile?.username || "Người dùng"}
+                    username={request.user_profile?.username || t("common.user")}
                     avatarUrl={request.user_profile?.avatar_url || null}
                     bio={request.user_profile?.bio || null}
                     createdAt={request.created_at}
@@ -297,7 +298,7 @@ export default function Friends() {
                 <Card>
                   <CardContent className="py-12 text-center">
                     <UserPlus className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">Không có lời mời kết bạn</p>
+                    <p className="text-muted-foreground">{t("friends.noRequests")}</p>
                   </CardContent>
                 </Card>
               )}
@@ -317,7 +318,7 @@ export default function Friends() {
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
-                          <p className="font-semibold">{friend.username || "Người dùng"}</p>
+                          <p className="font-semibold">{friend.username || t("common.user")}</p>
                           {friend.bio && (
                             <p className="text-xs text-muted-foreground line-clamp-1">
                               {friend.bio}
@@ -330,7 +331,7 @@ export default function Friends() {
                           className="gap-2"
                         >
                           <MessageCircle className="h-4 w-4" />
-                          Nhắn tin
+                          {t("friends.message")}
                         </Button>
                       </CardContent>
                     </Card>
@@ -340,9 +341,9 @@ export default function Friends() {
                 <Card>
                   <CardContent className="py-12 text-center">
                     <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">Chưa có bạn bè</p>
+                    <p className="text-muted-foreground">{t("friends.noFriends")}</p>
                     <p className="text-sm text-muted-foreground mt-2">
-                      Hãy tìm kiếm và kết bạn với người khác
+                      {t("friends.noFriendsHint")}
                     </p>
                   </CardContent>
                 </Card>

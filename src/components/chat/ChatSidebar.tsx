@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { usePresence } from "@/hooks/usePresence";
 import { useSoundSettings } from "@/hooks/useSoundSettings";
@@ -30,6 +31,7 @@ export default function ChatSidebar({
   onConversationsChange,
 }: ChatSidebarProps) {
   const { user, profile } = useAuth();
+  const { t } = useLanguage();
   const { onlineUsers } = usePresence(user?.id);
   const { messageNotificationEnabled, toggleMessageNotification } = useSoundSettings();
   const [conversations, setConversations] = useState<any[]>([]);
@@ -248,21 +250,21 @@ export default function ChatSidebar({
                 {messageNotificationEnabled ? (
                   <>
                     <Volume2 className="h-4 w-4" />
-                    <span>Âm thanh thông báo: Bật</span>
+                    <span>{t("chat.notificationOn")}</span>
                   </>
                 ) : (
                   <>
                     <VolumeX className="h-4 w-4" />
-                    <span>Âm thanh thông báo: Tắt</span>
+                    <span>{t("chat.notificationOff")}</span>
                   </>
                 )}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Nhóm mới</DropdownMenuItem>
-              <DropdownMenuItem>Tin nhắn mới</DropdownMenuItem>
-              <DropdownMenuItem>Tin nhắn có gắn dấu sao</DropdownMenuItem>
-              <DropdownMenuItem>Cài đặt</DropdownMenuItem>
-              <DropdownMenuItem>Đăng xuất</DropdownMenuItem>
+              <DropdownMenuItem>{t("chat.newGroup")}</DropdownMenuItem>
+              <DropdownMenuItem>{t("chat.newMessage")}</DropdownMenuItem>
+              <DropdownMenuItem>{t("chat.starred")}</DropdownMenuItem>
+              <DropdownMenuItem>{t("chat.settings")}</DropdownMenuItem>
+              <DropdownMenuItem>{t("nav.logout")}</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -274,7 +276,7 @@ export default function ChatSidebar({
           <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Tìm kiếm hoặc bắt đầu cuộc trò chuyện mới"
+            placeholder={t("chat.search")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
@@ -289,8 +291,8 @@ export default function ChatSidebar({
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
               <MessageSquarePlus className="h-8 w-8 text-muted-foreground" />
             </div>
-            <p className="font-medium">Chưa có cuộc trò chuyện nào</p>
-            <p className="text-sm mt-1">Nhấn nút + để bắt đầu chat</p>
+            <p className="font-medium">{t("chat.noConversations")}</p>
+            <p className="text-sm mt-1">{t("chat.startNew")}</p>
           </div>
         ) : (
           filteredConversations.map((conversation) => (

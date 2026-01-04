@@ -18,6 +18,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import NewConversationModal from "./NewConversationModal";
+import CreateGroupModal from "./CreateGroupModal";
 
 interface ChatSidebarProps {
   selectedConversation: any;
@@ -38,6 +39,7 @@ export default function ChatSidebar({
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [showNewConversationModal, setShowNewConversationModal] = useState(false);
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   
   // Get typing state for all conversations
   const conversationIds = conversations.map(c => c.id);
@@ -54,7 +56,10 @@ export default function ChatSidebar({
         conversations (
           id,
           created_at,
-          updated_at
+          updated_at,
+          is_group,
+          name,
+          group_avatar
         )
       `)
       .eq("user_id", user.id);
@@ -193,11 +198,16 @@ export default function ChatSidebar({
     }
   };
 
-  const filteredConversations = conversations.filter((conv) =>
-    conv.participants.some((p: any) =>
+  const filteredConversations = conversations.filter((conv) => {
+    // For group chats, search by group name
+    if (conv.is_group) {
+      return conv.name?.toLowerCase().includes(searchQuery.toLowerCase());
+    }
+    // For 1-1 chats, search by participant name
+    return conv.participants.some((p: any) =>
       p.profiles?.username?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  );
+    );
+  });
 
   return (
     <div className="w-80 border-r border-border bg-[hsl(var(--wa-sidebar-bg))] flex flex-col">
@@ -260,7 +270,10 @@ export default function ChatSidebar({
                 )}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>{t("chat.newGroup")}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowCreateGroupModal(true)}>
+                <Users className="h-4 w-4 mr-2" />
+                {t("chat.newGroup")}
+              </DropdownMenuItem>
               <DropdownMenuItem>{t("chat.newMessage")}</DropdownMenuItem>
               <DropdownMenuItem>{t("chat.starred")}</DropdownMenuItem>
               <DropdownMenuItem>{t("chat.settings")}</DropdownMenuItem>
@@ -322,6 +335,12 @@ export default function ChatSidebar({
         open={showNewConversationModal}
         onOpenChange={setShowNewConversationModal}
         onConversationCreated={handleConversationCreated}
+      />
+
+      <CreateGroupModal
+        open={showCreateGroupModal}
+        onOpenChange={setShowCreateGroupModal}
+        onGroupCreated={handleConversationCreated}
       />
     </div>
   );

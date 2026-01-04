@@ -651,6 +651,10 @@ export default function Chat() {
               pinnedCount={pinnedMessages.length}
               onOpenPinnedMessages={() => setPinnedPanelOpen(true)}
               onOpenWallpaperSelector={() => setWallpaperSelectorOpen(true)}
+              onConversationUpdate={() => {
+                // Refetch conversations and update selected conversation
+                setSelectedConversation(null);
+              }}
             />
             
             {loading ? (

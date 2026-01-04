@@ -7,7 +7,7 @@ import { useSoundSettings } from "@/hooks/useSoundSettings";
 import { useConversationsTyping } from "@/hooks/useConversationsTyping";
 import ConversationItem from "./ConversationItem";
 import { Button } from "@/components/ui/button";
-import { Search, MoreVertical, MessageSquarePlus, Camera, Users, Volume2, VolumeX } from "lucide-react";
+import { Search, MoreVertical, MessageSquarePlus, Camera, Users, Volume2, VolumeX, Archive, ChevronDown, ChevronRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -38,6 +38,8 @@ export default function ChatSidebar({
   const { messageNotificationEnabled, toggleMessageNotification } = useSoundSettings();
   const [conversations, setConversations] = useState<any[]>([]);
   const [deletedConversationIds, setDeletedConversationIds] = useState<Set<string>>(new Set());
+  const [archivedConversationIds, setArchivedConversationIds] = useState<Set<string>>(new Set());
+  const [showArchivedSection, setShowArchivedSection] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [showNewConversationModal, setShowNewConversationModal] = useState(false);
@@ -58,6 +60,20 @@ export default function ChatSidebar({
     
     if (data) {
       setDeletedConversationIds(new Set(data.map(d => d.conversation_id)));
+    }
+  }, [user]);
+
+  // Fetch archived conversation IDs
+  const fetchArchivedConversations = useCallback(async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from("archived_conversations")
+      .select("conversation_id")
+      .eq("user_id", user.id);
+    
+    if (data) {
+      setArchivedConversationIds(new Set(data.map(d => d.conversation_id)));
     }
   }, [user]);
 
@@ -153,11 +169,61 @@ export default function ChatSidebar({
     }
   };
 
+  // Handle archive conversation
+  const handleArchiveConversation = async (conversationId: string) => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("archived_conversations")
+      .insert({ user_id: user.id, conversation_id: conversationId });
+
+    if (error) {
+      toast.error(t("chat.archiveChatError"));
+      return;
+    }
+
+    toast.success(t("chat.archiveChatSuccess"));
+    
+    // Update local state immediately
+    setArchivedConversationIds(prev => new Set([...prev, conversationId]));
+    
+    // If currently selected conversation is archived, deselect it
+    if (selectedConversation?.id === conversationId) {
+      onSelectConversation(null);
+    }
+  };
+
+  // Handle unarchive conversation
+  const handleUnarchiveConversation = async (conversationId: string) => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("archived_conversations")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("conversation_id", conversationId);
+
+    if (error) {
+      toast.error(t("chat.archiveChatError"));
+      return;
+    }
+
+    toast.success(t("chat.unarchiveSuccess"));
+    
+    // Update local state immediately
+    setArchivedConversationIds(prev => {
+      const next = new Set(prev);
+      next.delete(conversationId);
+      return next;
+    });
+  };
+
   useEffect(() => {
     if (!user) return;
 
     fetchConversations();
     fetchDeletedConversations();
+    fetchArchivedConversations();
 
     // Subscribe to conversations, participants, and messages changes
     const channel = supabase
@@ -222,7 +288,7 @@ export default function ChatSidebar({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchConversations, fetchDeletedConversations, deletedConversationIds]);
+  }, [user, fetchConversations, fetchDeletedConversations, fetchArchivedConversations, deletedConversationIds]);
 
   const handleConversationCreated = async (conversationId: string) => {
     // Refetch all conversations to update the sidebar
@@ -254,17 +320,27 @@ export default function ChatSidebar({
     }
   };
 
-  const filteredConversations = conversations
-    // Filter out deleted conversations
-    .filter((conv) => !deletedConversationIds.has(conv.id))
-    // Then apply search filter
+  // Filter: active (not deleted, not archived)
+  const activeConversations = conversations
+    .filter((conv) => !deletedConversationIds.has(conv.id) && !archivedConversationIds.has(conv.id))
     .filter((conv) => {
       if (!searchQuery) return true;
-      // For group chats, search by group name
       if (conv.is_group) {
         return conv.name?.toLowerCase().includes(searchQuery.toLowerCase());
       }
-      // For 1-1 chats, search by participant name
+      return conv.participants.some((p: any) =>
+        p.profiles?.username?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    });
+
+  // Filter: archived (not deleted)
+  const archivedConversations = conversations
+    .filter((conv) => !deletedConversationIds.has(conv.id) && archivedConversationIds.has(conv.id))
+    .filter((conv) => {
+      if (!searchQuery) return true;
+      if (conv.is_group) {
+        return conv.name?.toLowerCase().includes(searchQuery.toLowerCase());
+      }
       return conv.participants.some((p: any) =>
         p.profiles?.username?.toLowerCase().includes(searchQuery.toLowerCase())
       );
@@ -360,7 +436,7 @@ export default function ChatSidebar({
 
       {/* Conversations List */}
       <ScrollArea className="flex-1">
-        {filteredConversations.length === 0 ? (
+        {activeConversations.length === 0 && archivedConversations.length === 0 ? (
           <div className="text-center text-muted-foreground py-12 px-4">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
               <MessageSquarePlus className="h-8 w-8 text-muted-foreground" />
@@ -369,27 +445,75 @@ export default function ChatSidebar({
             <p className="text-sm mt-1">{t("chat.startNew")}</p>
           </div>
         ) : (
-          filteredConversations.map((conversation) => (
-            <ConversationItem
-              key={conversation.id}
-              conversation={conversation}
-              isSelected={selectedConversation?.id === conversation.id}
-              onClick={() => {
-                onSelectConversation(conversation);
-                // Optimistic update: reset unread count immediately
-                setConversations(prev => 
-                  prev.map(c => 
-                    c.id === conversation.id 
-                      ? { ...c, unreadCount: 0 } 
-                      : c
-                  )
-                );
-              }}
-              onlineUsers={onlineUsers}
-              typingUsers={getTypingUsers(conversation.id)}
-              onDelete={handleDeleteConversation}
-            />
-          ))
+          <>
+            {/* Active conversations */}
+            {activeConversations.map((conversation) => (
+              <ConversationItem
+                key={conversation.id}
+                conversation={conversation}
+                isSelected={selectedConversation?.id === conversation.id}
+                onClick={() => {
+                  onSelectConversation(conversation);
+                  setConversations(prev => 
+                    prev.map(c => 
+                      c.id === conversation.id 
+                        ? { ...c, unreadCount: 0 } 
+                        : c
+                    )
+                  );
+                }}
+                onlineUsers={onlineUsers}
+                typingUsers={getTypingUsers(conversation.id)}
+                onDelete={handleDeleteConversation}
+                onArchive={handleArchiveConversation}
+              />
+            ))}
+
+            {/* Archived section */}
+            {archivedConversations.length > 0 && (
+              <>
+                <button
+                  onClick={() => setShowArchivedSection(!showArchivedSection)}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border/50"
+                >
+                  <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                    <Archive className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-medium text-foreground">{t("chat.archivedChats")}</p>
+                    <p className="text-sm text-muted-foreground">{archivedConversations.length} cuộc trò chuyện</p>
+                  </div>
+                  {showArchivedSection ? (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </button>
+
+                {showArchivedSection && archivedConversations.map((conversation) => (
+                  <ConversationItem
+                    key={conversation.id}
+                    conversation={conversation}
+                    isSelected={selectedConversation?.id === conversation.id}
+                    onClick={() => {
+                      onSelectConversation(conversation);
+                      setConversations(prev => 
+                        prev.map(c => 
+                          c.id === conversation.id 
+                            ? { ...c, unreadCount: 0 } 
+                            : c
+                        )
+                      );
+                    }}
+                    onlineUsers={onlineUsers}
+                    typingUsers={getTypingUsers(conversation.id)}
+                    onDelete={handleDeleteConversation}
+                    onArchive={handleUnarchiveConversation}
+                  />
+                ))}
+              </>
+            )}
+          </>
         )}
       </ScrollArea>
 

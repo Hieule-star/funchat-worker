@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Sun, Moon, LogOut, User as UserIcon } from "lucide-react";
+import { Sun, Moon, LogOut, User as UserIcon, Globe, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -12,7 +12,7 @@ import logo from "@/assets/logo.png";
 export default function Navbar() {
   const location = useLocation();
   const { user, profile, signOut } = useAuth();
-  const { language, toggleLanguage, t } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   const { setTheme, resolvedTheme } = useTheme();
 
   const toggleTheme = () => {
@@ -32,17 +32,27 @@ export default function Navbar() {
             {user && (
               <>
                 <UserSearchButton />
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleLanguage}
-                  className="font-bold text-xs px-2"
-                >
-                  {language === "vi" ? "EN" : "VI"}
-                </Button>
               </>
             )}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Globe className="h-4 w-4" />
+                  <span className="sr-only">{t("nav.language")}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40 bg-card">
+                <DropdownMenuItem onClick={() => setLanguage("vi")} className="flex items-center justify-between">
+                  <span>🇻🇳 Tiếng Việt</span>
+                  {language === "vi" && <Check className="h-4 w-4" />}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLanguage("en")} className="flex items-center justify-between">
+                  <span>🇺🇸 English</span>
+                  {language === "en" && <Check className="h-4 w-4" />}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <Button 
               variant="ghost" 

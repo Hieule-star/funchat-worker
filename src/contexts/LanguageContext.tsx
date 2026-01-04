@@ -19,6 +19,7 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.profile": "Hồ sơ",
     "nav.logout": "Đăng xuất",
     "nav.login": "Đăng nhập",
+    "nav.language": "Ngôn ngữ",
     
     // User Search
     "userSearch.search": "Tìm kiếm",
@@ -219,6 +220,7 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.profile": "Profile",
     "nav.logout": "Logout",
     "nav.login": "Login",
+    "nav.language": "Language",
     
     // User Search
     "userSearch.search": "Search",

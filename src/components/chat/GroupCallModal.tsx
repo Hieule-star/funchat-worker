@@ -1,7 +1,7 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Video, VideoOff, PhoneOff, Loader2, User, AlertCircle, CheckCircle2, Wifi, Users } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, PhoneOff, Loader2, User, AlertCircle, CheckCircle2, Wifi, Users, Monitor, MonitorOff } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useGroupAgoraCall } from "@/hooks/useGroupAgoraCall";
 import { toast } from "sonner";
@@ -113,9 +113,12 @@ export default function GroupCallModal({
     leaveChannel,
     toggleAudio,
     toggleVideo,
+    startScreenShare,
+    stopScreenShare,
     isJoined,
     remoteUsers,
     localUid,
+    isScreenSharing,
   } = useGroupAgoraCall();
 
   // Connection timer
@@ -246,6 +249,21 @@ export default function GroupCallModal({
     toggleVideo(newState);
   };
 
+  const handleToggleScreenShare = async () => {
+    try {
+      if (isScreenSharing) {
+        await stopScreenShare();
+        toast.success("Đã dừng chia sẻ màn hình");
+      } else {
+        await startScreenShare();
+        toast.success("Đang chia sẻ màn hình");
+      }
+    } catch (error) {
+      console.error('[GroupCallModal] Screen share toggle error:', error);
+      toast.error("Không thể chia sẻ màn hình");
+    }
+  };
+
   const handleEndCall = async () => {
     await leaveChannel();
     hasJoinedRef.current = false;
@@ -318,7 +336,7 @@ export default function GroupCallModal({
               <div className={`grid ${getGridCols()} gap-4 h-full`}>
                 {/* Local user tile */}
                 <div className="relative bg-gray-800 rounded-lg overflow-hidden aspect-video flex items-center justify-center">
-                  {mode === 'video' && videoEnabled ? (
+                  {mode === 'video' && (videoEnabled || isScreenSharing) ? (
                     <div ref={localVideoRef} className="w-full h-full" />
                   ) : (
                     <div className="flex flex-col items-center gap-2">
@@ -334,6 +352,12 @@ export default function GroupCallModal({
                     Bạn
                     {!audioEnabled && <MicOff className="h-3 w-3 text-red-400" />}
                   </div>
+                  {isScreenSharing && (
+                    <div className="absolute top-2 left-2 bg-red-500/80 px-1.5 py-0.5 rounded text-xs text-white flex items-center gap-1">
+                      <Monitor className="h-3 w-3" />
+                      Đang chia sẻ
+                    </div>
+                  )}
                   {audioEnabled && (
                     <div className="absolute top-2 right-2 bg-green-500/80 p-1 rounded-full">
                       <Mic className="h-3 w-3 text-white" />
@@ -376,14 +400,26 @@ export default function GroupCallModal({
             </Button>
 
             {mode === 'video' && (
-              <Button
-                variant={videoEnabled ? "secondary" : "destructive"}
-                size="icon"
-                className="h-14 w-14 rounded-full"
-                onClick={handleToggleVideo}
-              >
-                {videoEnabled ? <Video className="h-6 w-6" /> : <VideoOff className="h-6 w-6" />}
-              </Button>
+              <>
+                <Button
+                  variant={videoEnabled ? "secondary" : "destructive"}
+                  size="icon"
+                  className="h-14 w-14 rounded-full"
+                  onClick={handleToggleVideo}
+                  disabled={isScreenSharing}
+                >
+                  {videoEnabled ? <Video className="h-6 w-6" /> : <VideoOff className="h-6 w-6" />}
+                </Button>
+
+                <Button
+                  variant={isScreenSharing ? "destructive" : "secondary"}
+                  size="icon"
+                  className="h-14 w-14 rounded-full"
+                  onClick={handleToggleScreenShare}
+                >
+                  {isScreenSharing ? <MonitorOff className="h-6 w-6" /> : <Monitor className="h-6 w-6" />}
+                </Button>
+              </>
             )}
 
             <Button
@@ -417,6 +453,12 @@ export default function GroupCallModal({
               <span className="text-gray-400">My UID:</span>
               <span className="text-gray-300">{localUid || 'N/A'}</span>
             </div>
+            {isScreenSharing && (
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400">Screen:</span>
+                <span className="font-bold text-red-400">sharing</span>
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>

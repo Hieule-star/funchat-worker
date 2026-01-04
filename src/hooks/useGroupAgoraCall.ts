@@ -1,9 +1,10 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import AgoraRTC, { 
   IAgoraRTCClient, 
   ICameraVideoTrack, 
   IMicrophoneAudioTrack,
-  IAgoraRTCRemoteUser
+  IAgoraRTCRemoteUser,
+  ILocalVideoTrack
 } from "agora-rtc-sdk-ng";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,19 +19,24 @@ interface UseGroupAgoraCallReturn {
   leaveChannel: () => Promise<void>;
   toggleAudio: (enabled: boolean) => void;
   toggleVideo: (enabled: boolean) => void;
+  startScreenShare: () => Promise<void>;
+  stopScreenShare: () => Promise<void>;
   isJoined: boolean;
   remoteUsers: IAgoraRTCRemoteUser[];
   localUid: number | null;
+  isScreenSharing: boolean;
 }
 
 export function useGroupAgoraCall(): UseGroupAgoraCallReturn {
   const [isJoined, setIsJoined] = useState(false);
   const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
   const [localUid, setLocalUid] = useState<number | null>(null);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
   
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const localAudioTrackRef = useRef<IMicrophoneAudioTrack | null>(null);
   const localVideoTrackRef = useRef<ICameraVideoTrack | null>(null);
+  const screenTrackRef = useRef<ILocalVideoTrack | null>(null);
   const localVideoRef = useRef<HTMLDivElement>(null);
 
   const joinChannel = useCallback(async (channelName: string, mode: 'video' | 'audio', videoDeviceId?: string, audioDeviceId?: string) => {
@@ -169,6 +175,13 @@ export function useGroupAgoraCall(): UseGroupAgoraCallReturn {
   const leaveChannel = useCallback(async () => {
     console.log('[GroupAgora] Leaving channel');
     
+    // Stop screen share if active
+    if (screenTrackRef.current) {
+      screenTrackRef.current.close();
+      screenTrackRef.current = null;
+      setIsScreenSharing(false);
+    }
+    
     // Stop and close local tracks
     localAudioTrackRef.current?.close();
     localVideoTrackRef.current?.close();
@@ -197,14 +210,90 @@ export function useGroupAgoraCall(): UseGroupAgoraCallReturn {
     console.log('[GroupAgora] Video toggled:', enabled);
   }, []);
 
+  const startScreenShare = useCallback(async () => {
+    if (!clientRef.current || isScreenSharing) return;
+
+    try {
+      console.log('[GroupAgora] Starting screen share...');
+      
+      // Create screen share track
+      const screenTrack = await AgoraRTC.createScreenVideoTrack({}, "disable");
+      
+      // Handle if user cancels screen share picker
+      if (!screenTrack) {
+        console.log('[GroupAgora] Screen share cancelled by user');
+        return;
+      }
+
+      // Store the screen track (can be single track or [video, audio])
+      const videoTrack = Array.isArray(screenTrack) ? screenTrack[0] : screenTrack;
+      screenTrackRef.current = videoTrack;
+
+      // Unpublish camera track if exists
+      if (localVideoTrackRef.current) {
+        await clientRef.current.unpublish(localVideoTrackRef.current);
+        localVideoTrackRef.current.stop();
+      }
+
+      // Publish screen track
+      await clientRef.current.publish(videoTrack);
+      
+      // Play screen share in local preview
+      if (localVideoRef.current) {
+        videoTrack.play(localVideoRef.current);
+      }
+
+      // Handle when user stops sharing via browser UI
+      videoTrack.on("track-ended", () => {
+        console.log('[GroupAgora] Screen share ended by user');
+        stopScreenShare();
+      });
+
+      setIsScreenSharing(true);
+      console.log('[GroupAgora] Screen share started successfully');
+    } catch (error) {
+      console.error('[GroupAgora] Screen share error:', error);
+      throw error;
+    }
+  }, [isScreenSharing]);
+
+  const stopScreenShare = useCallback(async () => {
+    if (!clientRef.current || !screenTrackRef.current) return;
+
+    try {
+      console.log('[GroupAgora] Stopping screen share...');
+      
+      // Unpublish and close screen track
+      await clientRef.current.unpublish(screenTrackRef.current);
+      screenTrackRef.current.close();
+      screenTrackRef.current = null;
+
+      // Re-publish camera track if exists
+      if (localVideoTrackRef.current) {
+        await clientRef.current.publish(localVideoTrackRef.current);
+        if (localVideoRef.current) {
+          localVideoTrackRef.current.play(localVideoRef.current);
+        }
+      }
+
+      setIsScreenSharing(false);
+      console.log('[GroupAgora] Screen share stopped successfully');
+    } catch (error) {
+      console.error('[GroupAgora] Stop screen share error:', error);
+    }
+  }, []);
+
   return {
     localVideoRef,
     joinChannel,
     leaveChannel,
     toggleAudio,
     toggleVideo,
+    startScreenShare,
+    stopScreenShare,
     isJoined,
     remoteUsers,
     localUid,
+    isScreenSharing,
   };
 }

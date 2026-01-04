@@ -20,6 +20,7 @@ import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
 import ResetPassword from "./pages/ResetPassword";
 import Call from "./pages/Call";
+import CallHistory from "./pages/CallHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -87,6 +88,14 @@ const App = () => {
                       element={
                         <ProtectedRoute>
                           <Call />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/call-history"
+                      element={
+                        <ProtectedRoute>
+                          <CallHistory />
                         </ProtectedRoute>
                       }
                     />
